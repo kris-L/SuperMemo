@@ -1,21 +1,43 @@
 import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
+import { DatabaseManager } from '../database/DatabaseManager';
+import { DataInitializer } from '../database/DataInitializer';
 
 const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
-  onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+  async onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): Promise<void> {
     try {
       this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
     } catch (err) {
       hilog.error(DOMAIN, 'testTag', 'Failed to set colorMode. Cause: %{public}s', JSON.stringify(err));
     }
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onCreate');
+    
+    // 初始化数据库
+    try {
+      const dbManager = DatabaseManager.getInstance();
+      await dbManager.init(this.context);
+      
+      // 初始化默认数据
+      await DataInitializer.initializeDefaultData();
+      hilog.info(DOMAIN, 'testTag', '数据库初始化完成');
+    } catch (err) {
+      hilog.error(DOMAIN, 'testTag', '数据库初始化失败: %{public}s', JSON.stringify(err));
+    }
   }
 
-  onDestroy(): void {
+  async onDestroy(): Promise<void> {
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onDestroy');
+    
+    // 关闭数据库连接
+    try {
+      const dbManager = DatabaseManager.getInstance();
+      await dbManager.close();
+    } catch (err) {
+      hilog.error(DOMAIN, 'testTag', '关闭数据库失败: %{public}s', JSON.stringify(err));
+    }
   }
 
   onWindowStageCreate(windowStage: window.WindowStage): void {
