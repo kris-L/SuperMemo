@@ -1,4 +1,5 @@
 import { router } from '@kit.ArkUI';
+import { promptAction } from '@kit.ArkUI';
 
 /**
  * 连连看选择页面
@@ -7,14 +8,14 @@ import { router } from '@kit.ArkUI';
 @Entry
 @Component
 struct MatchGameSelect {
-  @State selectedDataType: string = '101数字桩'; // 选中的数据类型
+  @State selectedDataType: string = '110数字桩'; // 选中的数据类型
   @State selectedMatchTypes: string[] = ['桩序号', '桩图像']; // 选中的配对数据类型（必须选择两个）
 
   // 数据类型选项
-  private readonly dataTypes: string[] = ['101数字桩', '34省', '36计', '三字经'];
+  private readonly dataTypes: string[] = ['110数字桩', '34省', '36计', '三字经'];
   
-  // 配对数据类型选项（101数字桩）
-  private readonly matchTypes101: string[] = ['桩序号', '桩图像', '桩名称'];
+  // 配对数据类型选项（110数字桩）
+  private readonly matchTypes110: string[] = ['桩序号', '桩图像', '桩名称'];
 
   build() {
     Column() {
@@ -40,8 +41,8 @@ struct MatchGameSelect {
               .onChange((isChecked: boolean) => {
                 if (isChecked) {
                   this.selectedDataType = item;
-                  // 如果不是101数字桩，重置配对类型
-                  if (item !== '101数字桩') {
+                  // 如果不是110数字桩，重置配对类型
+                  if (item !== '110数字桩') {
                     this.selectedMatchTypes = [];
                   } else {
                     // 默认选择前两个
@@ -65,8 +66,8 @@ struct MatchGameSelect {
       .padding({ top: 10, bottom: 10 })
       .margin({ bottom: 30 })
 
-      // 选择配对数据类型（仅101数字桩显示）
-      if (this.selectedDataType === '101数字桩') {
+      // 选择配对数据类型（仅110数字桩显示）
+      if (this.selectedDataType === '110数字桩') {
         Text('选择配对数据：')
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
@@ -75,35 +76,52 @@ struct MatchGameSelect {
           .margin({ left: 20 })
 
         Column() {
-          ForEach(this.matchTypes101, (item: string) => {
+          ForEach(this.matchTypes110, (item: string) => {
             Row() {
               Checkbox({ name: item })
                 .select(this.selectedMatchTypes.includes(item))
                 .onChange((isChecked: boolean) => {
-                  if (isChecked) {
-                    // 如果已选择两个，需要先取消第一个，再选择新的
+                  const isCurrentlySelected = this.selectedMatchTypes.includes(item);
+                  
+                  if (isChecked && !isCurrentlySelected) {
+                    // 尝试选中
                     if (this.selectedMatchTypes.length >= 2) {
-                      // 移除第一个选中的
-                      this.selectedMatchTypes.shift();
+                      // 已经选择了两个，提示用户并拒绝操作
+                      promptAction.showToast({
+                        message: '最多只能选择两个配对类型，请先取消一个',
+                        duration: 2000
+                      });
+                      // 强制触发状态更新，确保checkbox保持未选中状态
+                      // 通过创建新数组（即使内容相同）来触发UI刷新
+                      const newSelectedTypes: string[] = [];
+                      for (let i = 0; i < this.selectedMatchTypes.length; i++) {
+                        newSelectedTypes.push(this.selectedMatchTypes[i]);
+                      }
+                      this.selectedMatchTypes = newSelectedTypes;
+                      return;
                     }
-                    // 添加到选中列表
-                    if (!this.selectedMatchTypes.includes(item)) {
-                      this.selectedMatchTypes.push(item);
+                    // 添加到选中列表（创建新数组以触发UI更新）
+                    const newSelectedTypes: string[] = [];
+                    for (let i = 0; i < this.selectedMatchTypes.length; i++) {
+                      newSelectedTypes.push(this.selectedMatchTypes[i]);
                     }
-                  } else {
-                    // 如果只有两个，不允许取消（必须保持两个）
-                    if (this.selectedMatchTypes.length <= 2) {
-                      // 不允许取消，自动选择第一个未选中的来替代
-                      for (const type of this.matchTypes101) {
-                        if (!this.selectedMatchTypes.includes(type) && type !== item) {
-                          const index = this.selectedMatchTypes.indexOf(item);
-                          if (index > -1) {
-                            this.selectedMatchTypes[index] = type;
-                          }
-                          break;
-                        }
+                    newSelectedTypes.push(item);
+                    this.selectedMatchTypes = newSelectedTypes;
+                  } else if (!isChecked && isCurrentlySelected) {
+                    // 取消选中（创建新数组以触发UI更新）
+                    const newSelectedTypes: string[] = [];
+                    for (let i = 0; i < this.selectedMatchTypes.length; i++) {
+                      if (this.selectedMatchTypes[i] !== item) {
+                        newSelectedTypes.push(this.selectedMatchTypes[i]);
                       }
                     }
+                    this.selectedMatchTypes = newSelectedTypes;
+                  } else if (isChecked && isCurrentlySelected) {
+                    // 如果已经是选中状态，但onChange被触发（可能是用户重复点击），不做任何操作
+                    return;
+                  } else if (!isChecked && !isCurrentlySelected) {
+                    // 如果已经是未选中状态，但onChange被触发，不做任何操作
+                    return;
                   }
                 })
               Text(item)
@@ -138,7 +156,7 @@ struct MatchGameSelect {
       }
 
       // 提示信息
-      if (this.selectedDataType === '101数字桩') {
+      if (this.selectedDataType === '110数字桩') {
         Text(`已选择配对类型：${this.selectedMatchTypes.join(' ↔ ')}`)
           .fontSize(14)
           .fontColor('#666666')
@@ -152,18 +170,29 @@ struct MatchGameSelect {
         .fontSize(18)
         .fontWeight(FontWeight.Medium)
         .backgroundColor('#4CAF50')
-        .enabled(this.selectedDataType === '101数字桩' && this.selectedMatchTypes.length === 2)
         .onClick(() => {
-          if (this.selectedDataType === '101数字桩' && this.selectedMatchTypes.length === 2) {
-            router.pushUrl({
-              url: 'pages/MatchGame',
-              params: {
-                dataType: this.selectedDataType,
-                matchType1: this.selectedMatchTypes[0],
-                matchType2: this.selectedMatchTypes[1]
-              }
+          if (this.selectedDataType !== '110数字桩') {
+            promptAction.showToast({
+              message: '请选择110数字桩',
+              duration: 2000
             });
+            return;
           }
+          if (this.selectedMatchTypes.length !== 2) {
+            promptAction.showToast({
+              message: '请选择两个配对类型',
+              duration: 2000
+            });
+            return;
+          }
+          router.pushUrl({
+            url: 'pages/MatchGame',
+            params: {
+              dataType: this.selectedDataType,
+              matchType1: this.selectedMatchTypes[0],
+              matchType2: this.selectedMatchTypes[1]
+            }
+          });
         })
         .margin({ bottom: 20 })
 

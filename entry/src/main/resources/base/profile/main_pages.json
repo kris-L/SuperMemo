@@ -2,6 +2,8 @@
   "src": [
     "pages/Index",
     "pages/MatchGameSelect",
-    "pages/MatchGame"
+    "pages/MatchGame",
+    "pages/NumberMemorySelect",
+    "pages/NumberMemory"
   ]
 }

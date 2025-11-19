@@ -11,6 +11,7 @@ interface GameCard {
   displayType: string; // 显示类型：matchType1 或 matchType2
   isFlipped: boolean; // 是否翻转
   isMatched: boolean; // 是否已匹配
+  isSelected: boolean; // 是否选中（用于UI更新）
 }
 
 /**
@@ -38,7 +39,7 @@ struct MatchGame {
   aboutToAppear() {
     // 获取路由参数
     const params = router.getParams() as Record<string, string>;
-    this.dataType = params['dataType'] || '101数字桩';
+    this.dataType = params['dataType'] || '110数字桩';
     this.matchType1 = params['matchType1'] || '桩序号';
     this.matchType2 = params['matchType2'] || '桩图像';
     
@@ -121,7 +122,8 @@ struct MatchGame {
         peg: peg,
         displayType: this.matchType1,
         isFlipped: true, // 开局就显示内容
-        isMatched: false
+        isMatched: false,
+        isSelected: false
       });
       // 第二张卡片（显示 matchType2，配对）
       this.cards.push({
@@ -129,7 +131,8 @@ struct MatchGame {
         peg: peg,
         displayType: this.matchType2,
         isFlipped: true, // 开局就显示内容
-        isMatched: false
+        isMatched: false,
+        isSelected: false
       });
     }
     
@@ -176,19 +179,49 @@ struct MatchGame {
       return;
     }
 
-    // 如果已经选中了这张卡片，取消选中
+    // 创建新数组以触发UI更新
+    const newCards: GameCard[] = [];
+    for (let i = 0; i < this.cards.length; i++) {
+      if (i === cardIndex) {
+        // 切换选中状态
+        newCards.push({
+          id: this.cards[i].id,
+          peg: this.cards[i].peg,
+          displayType: this.cards[i].displayType,
+          isFlipped: this.cards[i].isFlipped,
+          isMatched: this.cards[i].isMatched,
+          isSelected: !this.cards[i].isSelected
+        });
+      } else {
+        newCards.push(this.cards[i]);
+      }
+    }
+    this.cards = newCards;
+
+    // 更新选中列表
     const selectedIndex = this.selectedCards.indexOf(cardId);
     if (selectedIndex !== -1) {
-      this.selectedCards.splice(selectedIndex, 1);
-      return;
-    }
+      // 取消选中
+      const newSelectedCards: number[] = [];
+      for (let i = 0; i < this.selectedCards.length; i++) {
+        if (i !== selectedIndex) {
+          newSelectedCards.push(this.selectedCards[i]);
+        }
+      }
+      this.selectedCards = newSelectedCards;
+    } else {
+      // 添加到选中列表
+      const newSelectedCards: number[] = [];
+      for (let i = 0; i < this.selectedCards.length; i++) {
+        newSelectedCards.push(this.selectedCards[i]);
+      }
+      newSelectedCards.push(cardId);
+      this.selectedCards = newSelectedCards;
 
-    // 添加到选中列表
-    this.selectedCards.push(cardId);
-
-    // 如果选中了两张卡片，立即检查是否匹配
-    if (this.selectedCards.length === 2) {
-      this.checkMatch();
+      // 如果选中了两张卡片，立即检查是否匹配
+      if (this.selectedCards.length === 2) {
+        this.checkMatch();
+      }
     }
   }
 
@@ -226,11 +259,19 @@ struct MatchGame {
             peg: this.cards[i].peg,
             displayType: this.cards[i].displayType,
             isFlipped: true,
-            isMatched: true
+            isMatched: true,
+            isSelected: false
           });
         } else {
-          // 匹配失败：保持原状（不匹配的卡片保持显示）
-          newCards.push(this.cards[i]);
+          // 匹配失败：取消选中状态
+          newCards.push({
+            id: this.cards[i].id,
+            peg: this.cards[i].peg,
+            displayType: this.cards[i].displayType,
+            isFlipped: this.cards[i].isFlipped,
+            isMatched: this.cards[i].isMatched,
+            isSelected: false
+          });
         }
       } else {
         newCards.push(this.cards[i]);
@@ -315,7 +356,7 @@ struct MatchGame {
       Grid() {
         ForEach(this.cards, (card: GameCard) => {
           GridItem() {
-            this.createCard(card, this.selectedCards.includes(card.id));
+            this.createCard(card, card.isSelected);
           }
         })
       }
@@ -329,69 +370,77 @@ struct MatchGame {
 
       // 进度提示
       if (!this.isGameOver) {
-        Text(`进度: ${this.usedPegCount}/101`)
+        Text(`进度: ${this.usedPegCount}/110`)
           .fontSize(14)
           .fontColor('#666666')
           .margin({ top: 10 })
       }
 
-      // 游戏结束提示
+      // 游戏结束提示（居中显示）
       if (this.isGameOver) {
         Column() {
-          Text('恭喜完成！')
-            .fontSize(24)
-            .fontWeight(FontWeight.Bold)
-            .margin({ bottom: 20 })
-          
-          Text('所有101个数字桩已完成！')
-            .fontSize(16)
-            .fontColor('#666666')
-            .margin({ bottom: 20 })
-          
-          Text(`总用时: ${this.formatTime(this.elapsedTime)}`)
-            .fontSize(18)
-            .margin({ bottom: 10 })
-          
-          Text(`正确: ${this.correctCount} 次`)
-            .fontSize(18)
-            .margin({ bottom: 10 })
-          
-          Text(`错误: ${this.errorCount} 次`)
-            .fontSize(18)
-            .margin({ bottom: 30 })
-          
-          Row() {
-            Button('再来一局')
-              .width('40%')
-              .height(45)
-              .backgroundColor('#4CAF50')
-              .onClick(() => {
-                this.usedPegNumbers.clear();
-                this.usedPegCount = 0;
-                this.elapsedTime = 0;
-                this.correctCount = 0;
-                this.errorCount = 0;
-                this.isGameOver = false;
-                this.initGame();
-              })
+          Column() {
+            Text('恭喜完成！')
+              .fontSize(24)
+              .fontWeight(FontWeight.Bold)
+              .margin({ bottom: 20 })
             
-            Button('返回')
-              .width('40%')
-              .height(45)
-              .backgroundColor('#9E9E9E')
-              .onClick(() => {
-                router.back();
-              })
+            Text('所有110个数字桩已完成！')
+              .fontSize(16)
+              .fontColor('#666666')
+              .margin({ bottom: 20 })
+            
+            Text(`总用时: ${this.formatTime(this.elapsedTime)}`)
+              .fontSize(18)
+              .margin({ bottom: 10 })
+            
+            Text(`正确: ${this.correctCount} 次`)
+              .fontSize(18)
+              .margin({ bottom: 10 })
+            
+            Text(`错误: ${this.errorCount} 次`)
+              .fontSize(18)
+              .margin({ bottom: 30 })
+            
+            Row() {
+              Button('再来一局')
+                .width('40%')
+                .height(45)
+                .backgroundColor('#4CAF50')
+                .onClick(() => {
+                  this.usedPegNumbers.clear();
+                  this.usedPegCount = 0;
+                  this.elapsedTime = 0;
+                  this.correctCount = 0;
+                  this.errorCount = 0;
+                  this.isGameOver = false;
+                  this.initGame();
+                })
+              
+              Button('返回')
+                .width('40%')
+                .height(45)
+                .backgroundColor('#9E9E9E')
+                .onClick(() => {
+                  // 清空路由栈并返回到首页
+                  router.clear();
+                  router.replaceUrl({ url: 'pages/Index' });
+                })
+            }
+            .width('100%')
+            .justifyContent(FlexAlign.SpaceAround)
           }
-          .width('100%')
-          .justifyContent(FlexAlign.SpaceAround)
+          .width('80%')
+          .padding(20)
+          .backgroundColor(Color.White)
+          .borderRadius(12)
+          .shadow({ radius: 10, color: '#00000020', offsetX: 0, offsetY: 2 })
         }
-        .width('80%')
-        .padding(20)
-        .backgroundColor(Color.White)
-        .borderRadius(12)
-        .shadow({ radius: 10, color: '#00000020', offsetX: 0, offsetY: 2 })
-        .margin({ top: 20 })
+        .width('100%')
+        .height('100%')
+        .justifyContent(FlexAlign.Center)
+        .position({ x: 0, y: 0 })
+        .backgroundColor('#80000000')
       }
     }
     .width('100%')
@@ -449,17 +498,16 @@ struct MatchGame {
         if (isSelected) {
           Row() {
             Text('✓')
-              .fontSize(30)
+              .fontSize(24)
               .fontColor('#FFFFFF')
               .fontWeight(FontWeight.Bold)
           }
-          .width(48)
-          .height(48)
+          .width(36)
+          .height(36)
           .justifyContent(FlexAlign.Center)
           .backgroundColor('#FF0000')
-          .borderRadius(24)
-          .margin({ top: 8, right: 8 })
-          .position({ x: 'auto', y: 4 }) // 绝对定位：y轴距离顶部4px
+          .borderRadius(18)
+          .margin({ top: 6, right: 6 })
           .align(Alignment.TopEnd)
         }
       }

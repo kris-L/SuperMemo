@@ -3,7 +3,7 @@ import { NumberPeg } from '../model/NumberPeg';
 
 /**
  * 数据初始化工具类
- * 用于导入默认的101数字桩数据
+ * 用于导入默认的110数字桩数据
  */
 export class DataInitializer {
   /**
@@ -37,7 +37,7 @@ export class DataInitializer {
 
   /**
    * 初始化默认数据
-   * 如果数据库为空，则导入101个数字桩数据
+   * 如果数据库为空，则导入110个数字桩数据
    */
   public static async initializeDefaultData(): Promise<void> {
     try {

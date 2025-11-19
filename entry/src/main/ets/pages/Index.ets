@@ -23,6 +23,13 @@ struct Index {
           });
         }
 
+        // 数字记忆按钮
+        GridItem() {
+          this.createGameButton('数字记忆', '#2196F3', () => {
+            router.pushUrl({ url: 'pages/NumberMemorySelect' });
+          });
+        }
+
         // 预留位置（其他功能按钮）
         GridItem() {
           this.createGameButton('待开发', '#9E9E9E', () => {
