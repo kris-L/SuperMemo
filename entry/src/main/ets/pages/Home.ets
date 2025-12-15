@@ -3,9 +3,8 @@ import { router } from '@kit.ArkUI';
 /**
  * 首页 - 9宫格布局
  */
-@Entry
 @Component
-struct Index {
+export struct Index {
   build() {
     Column() {
       // 标题
@@ -30,6 +29,13 @@ struct Index {
           });
         }
 
+        // 编码训练按钮
+        GridItem() {
+          this.createGameButton('编码训练', '#FF9800', () => {
+            router.pushUrl({ url: 'pages/CodeTrainingSelect' });
+          });
+        }
+
         // 预留位置（其他功能按钮）
         GridItem() {
           this.createGameButton('待开发', '#9E9E9E', () => {
@@ -37,9 +43,17 @@ struct Index {
           });
         }
 
+        // 骨肉相连
         GridItem() {
-          this.createGameButton('待开发', '#9E9E9E', () => {
-            // 预留
+          this.createGameButton('骨肉相连', '#FF9800', () => {
+            router.pushUrl({ url: 'pages/BoneMatchSelect' });
+          });
+        }
+
+        // 扑克记忆
+        GridItem() {
+          this.createGameButton('扑克记忆', '#9C27B0', () => {
+            router.pushUrl({ url: 'pages/PokerMemory' });
           });
         }
 

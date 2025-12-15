@@ -1,9 +1,21 @@
 {
   "src": [
-    "pages/Index",
+    "pages/MainFrame",
+    "pages/MemoryPalaceList",
+    "pages/MemoryPalaceBuilder",
+    "pages/MemoryPalacePracticeSelect",
+    "pages/MemoryPalacePractice",
+    "pages/MemoryPalaceReview",
     "pages/MatchGameSelect",
     "pages/MatchGame",
     "pages/NumberMemorySelect",
-    "pages/NumberMemory"
+    "pages/NumberMemory",
+    "pages/CodeTrainingSelect",
+    "pages/CodeStudy",
+    "pages/PokerMemory",
+    "pages/SelectNumber",
+    "pages/BoneMatchSelect",
+    "pages/BoneMatch",
+    "pages/MemoryPalaceDaily"
   ]
 }

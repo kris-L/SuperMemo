@@ -16,14 +16,42 @@ struct MatchGameSelect {
   
   // 配对数据类型选项（110数字桩）
   private readonly matchTypes110: string[] = ['桩序号', '桩图像', '桩名称'];
+  
+  // 配对数据类型选项（34省）
+  private readonly matchTypes34: string[] = ['省序号', '省全称', '省会', '省简称'];
 
   build() {
     Column() {
-      // 标题
-      Text('连连看设置')
-        .fontSize(24)
-        .fontWeight(FontWeight.Bold)
-        .margin({ top: 20, bottom: 30 })
+      // 顶部栏
+      Row() {
+        Button() {
+          Image($r('sys.media.ohos_ic_back'))
+            .width(24)
+            .height(24)
+        }
+        .width(44)
+        .height(44)
+        .backgroundColor(Color.Transparent)
+        .onClick(() => {
+          router.back();
+        })
+
+        Text('连连看设置')
+          .layoutWeight(1)
+          .textAlign(TextAlign.Center)
+          .fontSize(20)
+          .fontWeight(FontWeight.Medium)
+
+        Blank()
+          .width(44)
+          .height(44)
+      }
+      .width('100%')
+      .height(56)
+      .padding({ left: 12, right: 12 })
+      .justifyContent(FlexAlign.Start)
+      .alignItems(VerticalAlign.Center)
+      .margin({ bottom: 10 })
 
       // 选择数据类型
       Text('选择数据类型：')
@@ -41,12 +69,22 @@ struct MatchGameSelect {
               .onChange((isChecked: boolean) => {
                 if (isChecked) {
                   this.selectedDataType = item;
-                  // 如果不是110数字桩，重置配对类型
-                  if (item !== '110数字桩') {
-                    this.selectedMatchTypes = [];
-                  } else {
+                  // 根据数据类型设置默认配对类型
+                  if (item === '110数字桩') {
                     // 默认选择前两个
                     this.selectedMatchTypes = ['桩序号', '桩图像'];
+                  } else if (item === '34省') {
+                    // 默认选择前两个
+                    this.selectedMatchTypes = ['省序号', '省全称'];
+                  } else if (item === '36计') {
+                    // 36计固定配对：序号 ↔ 内容
+                    this.selectedMatchTypes = ['序号', '内容'];
+                  } else if (item === '三字经') {
+                    // 三字经固定配对：序号 ↔ 内容
+                    this.selectedMatchTypes = ['序号', '内容'];
+                  } else {
+                    // 其他类型重置配对类型
+                    this.selectedMatchTypes = [];
                   }
                 }
               })
@@ -66,8 +104,8 @@ struct MatchGameSelect {
       .padding({ top: 10, bottom: 10 })
       .margin({ bottom: 30 })
 
-      // 选择配对数据类型（仅110数字桩显示）
-      if (this.selectedDataType === '110数字桩') {
+      // 选择配对数据类型（110数字桩和34省显示）
+      if (this.selectedDataType === '110数字桩' || this.selectedDataType === '34省') {
         Text('选择配对数据：')
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
@@ -76,7 +114,9 @@ struct MatchGameSelect {
           .margin({ left: 20 })
 
         Column() {
-          ForEach(this.matchTypes110, (item: string) => {
+          ForEach(
+            this.selectedDataType === '110数字桩' ? this.matchTypes110 : this.matchTypes34,
+            (item: string) => {
             Row() {
               Checkbox({ name: item })
                 .select(this.selectedMatchTypes.includes(item))
@@ -156,8 +196,13 @@ struct MatchGameSelect {
       }
 
       // 提示信息
-      if (this.selectedDataType === '110数字桩') {
+      if (this.selectedDataType === '110数字桩' || this.selectedDataType === '34省') {
         Text(`已选择配对类型：${this.selectedMatchTypes.join(' ↔ ')}`)
+          .fontSize(14)
+          .fontColor('#666666')
+          .margin({ bottom: 10 })
+      } else if (this.selectedDataType === '36计' || this.selectedDataType === '三字经') {
+        Text(`配对类型：${this.selectedMatchTypes.join(' ↔ ')}`)
           .fontSize(14)
           .fontColor('#666666')
           .margin({ bottom: 10 })
@@ -171,20 +216,34 @@ struct MatchGameSelect {
         .fontWeight(FontWeight.Medium)
         .backgroundColor('#4CAF50')
         .onClick(() => {
-          if (this.selectedDataType !== '110数字桩') {
+          // 验证数据类型
+          if (this.selectedDataType !== '110数字桩' && 
+              this.selectedDataType !== '34省' && 
+              this.selectedDataType !== '36计' && 
+              this.selectedDataType !== '三字经') {
             promptAction.showToast({
-              message: '请选择110数字桩',
+              message: '请选择有效的数据类型',
               duration: 2000
             });
             return;
           }
-          if (this.selectedMatchTypes.length !== 2) {
+          
+          // 对于110数字桩和34省，需要验证配对类型
+          if ((this.selectedDataType === '110数字桩' || this.selectedDataType === '34省') && 
+              this.selectedMatchTypes.length !== 2) {
             promptAction.showToast({
               message: '请选择两个配对类型',
               duration: 2000
             });
             return;
           }
+          
+          // 对于36计和三字经，确保配对类型已设置
+          if ((this.selectedDataType === '36计' || this.selectedDataType === '三字经') && 
+              this.selectedMatchTypes.length !== 2) {
+            this.selectedMatchTypes = ['序号', '内容'];
+          }
+          
           router.pushUrl({
             url: 'pages/MatchGame',
             params: {

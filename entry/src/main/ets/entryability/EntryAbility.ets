@@ -3,6 +3,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { DatabaseManager } from '../database/DatabaseManager';
 import { DataInitializer } from '../database/DataInitializer';
+import { MemoryPalaceInitializer } from '../database/MemoryPalaceInitializer';
 
 const DOMAIN = 0x0000;
 
@@ -22,6 +23,7 @@ export default class EntryAbility extends UIAbility {
       
       // 初始化默认数据
       await DataInitializer.initializeDefaultData();
+      await MemoryPalaceInitializer.initializeDefaultData();
       hilog.info(DOMAIN, 'testTag', '数据库初始化完成');
     } catch (err) {
       hilog.error(DOMAIN, 'testTag', '数据库初始化失败: %{public}s', JSON.stringify(err));
@@ -44,7 +46,7 @@ export default class EntryAbility extends UIAbility {
     // Main window is created, set main page for this ability
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
 
-    windowStage.loadContent('pages/Index', (err) => {
+    windowStage.loadContent('pages/MainFrame', (err) => {
       if (err.code) {
         hilog.error(DOMAIN, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err));
         return;

@@ -24,11 +24,36 @@ struct NumberMemorySelect {
 
   build() {
     Column() {
-      // 标题
-      Text('数字记忆设置')
-        .fontSize(24)
-        .fontWeight(FontWeight.Bold)
-        .margin({ top: 20, bottom: 30 })
+      // 顶部栏
+      Row() {
+        Button() {
+          Image($r('sys.media.ohos_ic_back'))
+            .width(24)
+            .height(24)
+        }
+        .width(44)
+        .height(44)
+        .backgroundColor(Color.Transparent)
+        .onClick(() => {
+          router.back();
+        })
+
+        Text('数字记忆设置')
+          .layoutWeight(1)
+          .textAlign(TextAlign.Center)
+          .fontSize(20)
+          .fontWeight(FontWeight.Medium)
+
+        Blank()
+          .width(44)
+          .height(44)
+      }
+      .width('100%')
+      .height(56)
+      .padding({ left: 12, right: 12 })
+      .justifyContent(FlexAlign.Start)
+      .alignItems(VerticalAlign.Center)
+      .margin({ bottom: 10 })
 
       // 选择范围类型
       Text('设置范围：')
@@ -95,7 +120,7 @@ struct NumberMemorySelect {
               }
               this.rowCount = num;
             })
-          Text(`当前: ${this.rowCount}`)
+          Text('范围: 1-1000')
             .fontSize(14)
             .fontColor('#666666')
             .width('30%')
@@ -129,7 +154,7 @@ struct NumberMemorySelect {
               }
               this.digitsPerRow = num;
             })
-          Text(`当前: ${this.digitsPerRow}`)
+          Text('范围: 1-10')
             .fontSize(14)
             .fontColor('#666666')
             .width('30%')
@@ -163,7 +188,7 @@ struct NumberMemorySelect {
               }
               this.trainingCount = num;
             })
-          Text(`当前: ${this.trainingCount}`)
+          Text('范围: 1-1000')
             .fontSize(14)
             .fontColor('#666666')
             .width('30%')
@@ -202,7 +227,7 @@ struct NumberMemorySelect {
                 this.piEndDigitText = this.piStartDigit.toString();
               }
             })
-          Text(`当前: ${this.piStartDigit}`)
+          Text('范围: 1-10000')
             .fontSize(14)
             .fontColor('#666666')
             .width('30%')
@@ -241,7 +266,7 @@ struct NumberMemorySelect {
               }
               this.piEndDigit = num;
             })
-          Text(`当前: ${this.piEndDigit}`)
+          Text('范围: 1-10000')
             .fontSize(14)
             .fontColor('#666666')
             .width('30%')

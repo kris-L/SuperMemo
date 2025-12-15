@@ -2,6 +2,19 @@ import { relationalStore, ValuesBucket } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { Context } from '@kit.AbilityKit';
 import { NumberPeg } from '../model/NumberPeg';
+import { MemoryPalaceData } from '../model/MemoryPalace';
+
+/**
+ * 思维导图数据接口
+ */
+export interface MindMapData {
+  id?: number;
+  name: string;
+  data: string;
+  sourcePalaceId?: number;
+  createTime?: number;
+  updateTime?: number;
+}
 
 const STORE_CONFIG: relationalStore.StoreConfig = {
   name: 'SuperMemo.db', // 数据库名称
@@ -19,6 +32,27 @@ const SQL_CREATE_TABLE = `
     create_time INTEGER,
     update_time INTEGER,
     UNIQUE(number)
+  )
+`;
+
+const SQL_CREATE_MEMORY_PALACE_TABLE = `
+  CREATE TABLE IF NOT EXISTS memory_palace (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    data TEXT NOT NULL,
+    create_time INTEGER,
+    update_time INTEGER
+  )
+`;
+
+const SQL_CREATE_MIND_MAP_TABLE = `
+  CREATE TABLE IF NOT EXISTS mind_map (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    data TEXT NOT NULL,
+    source_palace_id INTEGER,
+    create_time INTEGER,
+    update_time INTEGER
   )
 `;
 
@@ -54,6 +88,8 @@ export class DatabaseManager {
       
       // 创建表
       await this.rdbStore.executeSql(SQL_CREATE_TABLE);
+      await this.rdbStore.executeSql(SQL_CREATE_MEMORY_PALACE_TABLE);
+      await this.rdbStore.executeSql(SQL_CREATE_MIND_MAP_TABLE);
       
       this.isInitialized = true;
       console.info('[DatabaseManager] 数据库初始化成功');
@@ -294,6 +330,266 @@ export class DatabaseManager {
       this.rdbStore = null;
       this.isInitialized = false;
       console.info('[DatabaseManager] 数据库连接已关闭');
+    }
+  }
+
+  // ==================== 记忆宫殿相关方法 ====================
+
+  /**
+   * 插入记忆宫殿数据
+   */
+  public async insertMemoryPalace(palace: MemoryPalaceData): Promise<number> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const valuesBucket: ValuesBucket = {
+        'name': palace.name,
+        'data': palace.data,
+        'create_time': Date.now(),
+        'update_time': Date.now()
+      };
+
+      const insertId: number = await this.rdbStore.insert('memory_palace', valuesBucket);
+      console.info(`[DatabaseManager] 插入记忆宫殿数据成功: name=${palace.name}, id=${insertId}`);
+      return insertId;
+    } catch (err) {
+      console.error(`[DatabaseManager] 插入记忆宫殿数据失败: ${JSON.stringify(err)}`);
+      throw new Error('插入记忆宫殿数据失败: ' + JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 查询所有记忆宫殿数据
+   */
+  public async getAllMemoryPalaces(): Promise<MemoryPalaceData[]> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const predicates = new relationalStore.RdbPredicates('memory_palace');
+      predicates.orderByAsc('create_time');
+      
+      const resultSet: relationalStore.ResultSet = await this.rdbStore.query(predicates, ['id', 'name', 'data', 'create_time', 'update_time']);
+      
+      const palaces: MemoryPalaceData[] = [];
+      const idIndex: number = resultSet.getColumnIndex('id');
+      const nameIndex: number = resultSet.getColumnIndex('name');
+      const dataIndex: number = resultSet.getColumnIndex('data');
+      const createTimeIndex: number = resultSet.getColumnIndex('create_time');
+      const updateTimeIndex: number = resultSet.getColumnIndex('update_time');
+      
+      while (resultSet.goToNextRow()) {
+        const palace = new MemoryPalaceData(
+          resultSet.getString(nameIndex),
+          resultSet.getString(dataIndex)
+        );
+        palace.id = resultSet.getLong(idIndex);
+        palace.createTime = resultSet.getLong(createTimeIndex);
+        palace.updateTime = resultSet.getLong(updateTimeIndex);
+        palaces.push(palace);
+      }
+      
+      resultSet.close();
+      return palaces;
+    } catch (err) {
+      console.error(`[DatabaseManager] 查询所有记忆宫殿数据失败: ${JSON.stringify(err)}`);
+      throw new Error('查询所有记忆宫殿数据失败: ' + JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 根据ID删除记忆宫殿数据
+   */
+  public async deleteMemoryPalace(id: number): Promise<number> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const predicates = new relationalStore.RdbPredicates('memory_palace');
+      predicates.equalTo('id', id);
+      
+      const rowsAffected: number = await this.rdbStore.delete(predicates);
+      console.info(`[DatabaseManager] 删除记忆宫殿数据成功: id=${id}, rowsAffected=${rowsAffected}`);
+      return rowsAffected;
+    } catch (err) {
+      console.error(`[DatabaseManager] 删除记忆宫殿数据失败: ${JSON.stringify(err)}`);
+      throw new Error('删除记忆宫殿数据失败: ' + JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 检查记忆宫殿表是否已有数据
+   */
+  public async hasMemoryPalaceData(): Promise<boolean> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const predicates = new relationalStore.RdbPredicates('memory_palace');
+      const resultSet: relationalStore.ResultSet = await this.rdbStore.query(predicates, ['id']);
+      const hasData: boolean = resultSet.rowCount > 0;
+      resultSet.close();
+      return hasData;
+    } catch (err) {
+      console.error(`[DatabaseManager] 检查记忆宫殿数据失败: ${JSON.stringify(err)}`);
+      throw new Error('检查记忆宫殿数据失败: ' + JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 更新记忆宫殿数据
+   */
+  public async updateMemoryPalace(palace: MemoryPalaceData): Promise<number> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    if (!palace.id) {
+      throw new Error('记忆宫殿ID不能为空');
+    }
+
+    try {
+      const valuesBucket: ValuesBucket = {
+        'name': palace.name,
+        'data': palace.data,
+        'update_time': Date.now()
+      };
+
+      const predicates = new relationalStore.RdbPredicates('memory_palace');
+      predicates.equalTo('id', palace.id);
+      
+      const rowsAffected: number = await this.rdbStore.update(valuesBucket, predicates);
+      console.info(`[DatabaseManager] 更新记忆宫殿数据成功: id=${palace.id}, rowsAffected=${rowsAffected}`);
+      return rowsAffected;
+    } catch (err) {
+      console.error(`[DatabaseManager] 更新记忆宫殿数据失败: ${JSON.stringify(err)}`);
+      throw new Error('更新记忆宫殿数据失败: ' + JSON.stringify(err));
+    }
+  }
+
+  // ==================== 思维导图（日常记忆）相关方法 ====================
+
+  /**
+   * 插入思维导图数据（从记忆宫殿导入）
+   */
+  public async insertMindMap(name: string, data: string, sourcePalaceId?: number): Promise<number> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const valuesBucket: ValuesBucket = {
+        'name': name,
+        'data': data,
+        'source_palace_id': sourcePalaceId || null,
+        'create_time': Date.now(),
+        'update_time': Date.now()
+      };
+
+      const insertId: number = await this.rdbStore.insert('mind_map', valuesBucket);
+      console.info(`[DatabaseManager] 插入思维导图数据成功: name=${name}, id=${insertId}`);
+      return insertId;
+    } catch (err) {
+      console.error(`[DatabaseManager] 插入思维导图数据失败: ${JSON.stringify(err)}`);
+      throw new Error('插入思维导图数据失败: ' + JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 查询所有思维导图数据
+   */
+  public async getAllMindMaps(): Promise<MindMapData[]> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const predicates = new relationalStore.RdbPredicates('mind_map');
+      predicates.orderByDesc('create_time');
+      
+      const resultSet: relationalStore.ResultSet = await this.rdbStore.query(predicates, ['id', 'name', 'data', 'source_palace_id', 'create_time', 'update_time']);
+      
+      const mindMaps: MindMapData[] = [];
+      const idIndex: number = resultSet.getColumnIndex('id');
+      const nameIndex: number = resultSet.getColumnIndex('name');
+      const dataIndex: number = resultSet.getColumnIndex('data');
+      const sourcePalaceIdIndex: number = resultSet.getColumnIndex('source_palace_id');
+      const createTimeIndex: number = resultSet.getColumnIndex('create_time');
+      const updateTimeIndex: number = resultSet.getColumnIndex('update_time');
+      
+      while (resultSet.goToNextRow()) {
+        const mindMap: MindMapData = {
+          name: resultSet.getString(nameIndex),
+          data: resultSet.getString(dataIndex)
+        };
+        mindMap.id = resultSet.getLong(idIndex);
+        const sourcePalaceId = resultSet.getLong(sourcePalaceIdIndex);
+        if (sourcePalaceId !== null) {
+          mindMap.sourcePalaceId = sourcePalaceId;
+        }
+        mindMap.createTime = resultSet.getLong(createTimeIndex);
+        mindMap.updateTime = resultSet.getLong(updateTimeIndex);
+        mindMaps.push(mindMap);
+      }
+      
+      resultSet.close();
+      return mindMaps;
+    } catch (err) {
+      console.error(`[DatabaseManager] 查询所有思维导图数据失败: ${JSON.stringify(err)}`);
+      throw new Error('查询所有思维导图数据失败: ' + JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 根据ID删除思维导图数据
+   */
+  public async deleteMindMap(id: number): Promise<number> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const predicates = new relationalStore.RdbPredicates('mind_map');
+      predicates.equalTo('id', id);
+      
+      const rowsAffected: number = await this.rdbStore.delete(predicates);
+      console.info(`[DatabaseManager] 删除思维导图数据成功: id=${id}, rowsAffected=${rowsAffected}`);
+      return rowsAffected;
+    } catch (err) {
+      console.error(`[DatabaseManager] 删除思维导图数据失败: ${JSON.stringify(err)}`);
+      throw new Error('删除思维导图数据失败: ' + JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 更新思维导图数据
+   */
+  public async updateMindMap(id: number, name: string, data: string): Promise<number> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const valuesBucket: ValuesBucket = {
+        'name': name,
+        'data': data,
+        'update_time': Date.now()
+      };
+
+      const predicates = new relationalStore.RdbPredicates('mind_map');
+      predicates.equalTo('id', id);
+      
+      const rowsAffected: number = await this.rdbStore.update(valuesBucket, predicates);
+      console.info(`[DatabaseManager] 更新思维导图数据成功: id=${id}, rowsAffected=${rowsAffected}`);
+      return rowsAffected;
+    } catch (err) {
+      console.error(`[DatabaseManager] 更新思维导图数据失败: ${JSON.stringify(err)}`);
+      throw new Error('更新思维导图数据失败: ' + JSON.stringify(err));
     }
   }
 }

@@ -1,13 +1,20 @@
 import { router } from '@kit.ArkUI';
 import { NumberPegService } from '../utils/NumberPegService';
 import { NumberPeg } from '../model/NumberPeg';
+import { ProvinceService } from '../utils/ProvinceService';
+import { Province } from '../model/Province';
+import { SimpleItemService } from '../utils/SimpleItemService';
+import { SimpleItem } from '../model/SimpleItem';
 
 /**
  * 游戏卡片数据
  */
 interface GameCard {
   id: number;
-  peg: NumberPeg;
+  dataType: string; // 数据类型：'110数字桩'、'34省'、'36计'、'三字经'
+  peg?: NumberPeg; // 数字桩数据（当dataType为'110数字桩'时使用）
+  province?: Province; // 省份数据（当dataType为'34省'时使用）
+  simpleItem?: SimpleItem; // 简单数据项（当dataType为'36计'或'三字经'时使用）
   displayType: string; // 显示类型：matchType1 或 matchType2
   isFlipped: boolean; // 是否翻转
   isMatched: boolean; // 是否已匹配
@@ -27,14 +34,18 @@ struct MatchGame {
   @State errorCount: number = 0; // 错误消除数
   @State isGameOver: boolean = false;
   @State isRoundComplete: boolean = false; // 当前轮次是否完成
-  @State usedPegCount: number = 0; // 已使用过的数字桩数量（用于UI更新）
+  @State usedPegCount: number = 0; // 已使用过的数据数量（用于UI更新）
   
   private timer: number | null = null;
   private dataType: string = '';
   private matchType1: string = '';
   private matchType2: string = '';
   private usedPegNumbers: Set<number> = new Set(); // 已使用过的数字桩编号
+  private usedProvinceNumbers: Set<number> = new Set(); // 已使用过的省份编号
+  private usedSimpleItemNumbers: Set<number> = new Set(); // 已使用过的简单数据项编号
   private allPegs: NumberPeg[] = []; // 所有数字桩数据
+  private allProvinces: Province[] = []; // 所有省份数据
+  private allSimpleItems: SimpleItem[] = []; // 所有简单数据项（36计或三字经）
 
   aboutToAppear() {
     // 获取路由参数
@@ -59,15 +70,50 @@ struct MatchGame {
    */
   async initGame() {
     try {
-      const service = NumberPegService.getInstance();
-      this.allPegs = await service.getAllNumberPegs();
-      
-      // 重置已使用列表（首次游戏）
-      if (this.usedPegNumbers.size === 0) {
-        this.elapsedTime = 0;
-        this.correctCount = 0;
-        this.errorCount = 0;
-        this.startTimer();
+      if (this.dataType === '110数字桩') {
+        const service = NumberPegService.getInstance();
+        this.allPegs = await service.getAllNumberPegs();
+        
+        // 重置已使用列表（首次游戏）
+        if (this.usedPegNumbers.size === 0) {
+          this.elapsedTime = 0;
+          this.correctCount = 0;
+          this.errorCount = 0;
+          this.startTimer();
+        }
+      } else if (this.dataType === '34省') {
+        const service = ProvinceService.getInstance();
+        this.allProvinces = service.getAllProvinces();
+        
+        // 重置已使用列表（首次游戏）
+        if (this.usedProvinceNumbers.size === 0) {
+          this.elapsedTime = 0;
+          this.correctCount = 0;
+          this.errorCount = 0;
+          this.startTimer();
+        }
+      } else if (this.dataType === '36计') {
+        const service = SimpleItemService.getInstance();
+        this.allSimpleItems = service.getAllStratagems();
+        
+        // 重置已使用列表（首次游戏）
+        if (this.usedSimpleItemNumbers.size === 0) {
+          this.elapsedTime = 0;
+          this.correctCount = 0;
+          this.errorCount = 0;
+          this.startTimer();
+        }
+      } else if (this.dataType === '三字经') {
+        const service = SimpleItemService.getInstance();
+        this.allSimpleItems = service.getAllSanZiJing();
+        
+        // 重置已使用列表（首次游戏）
+        if (this.usedSimpleItemNumbers.size === 0) {
+          this.elapsedTime = 0;
+          this.correctCount = 0;
+          this.errorCount = 0;
+          this.startTimer();
+        }
       }
       
       // 加载新一轮卡片
@@ -81,59 +127,174 @@ struct MatchGame {
    * 加载下一轮卡片
    */
   loadNextRound() {
-    // 获取未使用过的数字桩
-    const availablePegs = this.allPegs.filter(peg => !this.usedPegNumbers.has(peg.number));
-    
-    // 如果所有数字桩都已使用，游戏结束
-    if (availablePegs.length === 0) {
-      this.isGameOver = true;
-      if (this.timer !== null) {
-        clearInterval(this.timer);
-        this.timer = null;
+    if (this.dataType === '110数字桩') {
+      // 获取未使用过的数字桩
+      const availablePegs = this.allPegs.filter(peg => !this.usedPegNumbers.has(peg.number));
+      
+      // 如果所有数字桩都已使用，游戏结束
+      if (availablePegs.length === 0) {
+        this.isGameOver = true;
+        if (this.timer !== null) {
+          clearInterval(this.timer);
+          this.timer = null;
+        }
+        return;
       }
-      return;
-    }
-    
-    // 随机抽取6个数据（12张卡片）
-    const selectedPegs: NumberPeg[] = [];
-    const usedIndices: Set<number> = new Set();
-    
-    const maxCount = Math.min(6, availablePegs.length);
-    while (selectedPegs.length < maxCount) {
-      const randomIndex = Math.floor(Math.random() * availablePegs.length);
-      if (!usedIndices.has(randomIndex)) {
-        usedIndices.add(randomIndex);
-        selectedPegs.push(availablePegs[randomIndex]);
-        // 标记为已使用
-        this.usedPegNumbers.add(availablePegs[randomIndex].number);
-        // 更新UI状态
-        this.usedPegCount = this.usedPegNumbers.size;
+      
+      // 随机抽取6个数据（12张卡片）
+      const selectedPegs: NumberPeg[] = [];
+      const usedIndices: Set<number> = new Set();
+      
+      const maxCount = Math.min(6, availablePegs.length);
+      while (selectedPegs.length < maxCount) {
+        const randomIndex = Math.floor(Math.random() * availablePegs.length);
+        if (!usedIndices.has(randomIndex)) {
+          usedIndices.add(randomIndex);
+          selectedPegs.push(availablePegs[randomIndex]);
+          // 标记为已使用
+          this.usedPegNumbers.add(availablePegs[randomIndex].number);
+          // 更新UI状态
+          this.usedPegCount = this.usedPegNumbers.size;
+        }
       }
-    }
-    
-    // 创建卡片（每对数据创建2张卡片，一张显示matchType1，一张显示matchType2）
-    // 传统连连看：开局所有卡片都正面显示
-    this.cards = [];
-    let cardId = 0;
-    for (const peg of selectedPegs) {
-      // 第一张卡片（显示 matchType1）
-      this.cards.push({
-        id: cardId++,
-        peg: peg,
-        displayType: this.matchType1,
-        isFlipped: true, // 开局就显示内容
-        isMatched: false,
-        isSelected: false
-      });
-      // 第二张卡片（显示 matchType2，配对）
-      this.cards.push({
-        id: cardId++,
-        peg: peg,
-        displayType: this.matchType2,
-        isFlipped: true, // 开局就显示内容
-        isMatched: false,
-        isSelected: false
-      });
+      
+      // 创建卡片（每对数据创建2张卡片，一张显示matchType1，一张显示matchType2）
+      this.cards = [];
+      let cardId = 0;
+      for (const peg of selectedPegs) {
+        // 第一张卡片（显示 matchType1）
+        this.cards.push({
+          id: cardId++,
+          dataType: '110数字桩',
+          peg: peg,
+          displayType: this.matchType1,
+          isFlipped: true,
+          isMatched: false,
+          isSelected: false
+        });
+        // 第二张卡片（显示 matchType2，配对）
+        this.cards.push({
+          id: cardId++,
+          dataType: '110数字桩',
+          peg: peg,
+          displayType: this.matchType2,
+          isFlipped: true,
+          isMatched: false,
+          isSelected: false
+        });
+      }
+    } else if (this.dataType === '34省') {
+      // 获取未使用过的省份
+      const availableProvinces = this.allProvinces.filter(province => !this.usedProvinceNumbers.has(province.number));
+      
+      // 如果所有省份都已使用，游戏结束
+      if (availableProvinces.length === 0) {
+        this.isGameOver = true;
+        if (this.timer !== null) {
+          clearInterval(this.timer);
+          this.timer = null;
+        }
+        return;
+      }
+      
+      // 随机抽取6个数据（12张卡片）
+      const selectedProvinces: Province[] = [];
+      const usedIndices: Set<number> = new Set();
+      
+      const maxCount = Math.min(6, availableProvinces.length);
+      while (selectedProvinces.length < maxCount) {
+        const randomIndex = Math.floor(Math.random() * availableProvinces.length);
+        if (!usedIndices.has(randomIndex)) {
+          usedIndices.add(randomIndex);
+          selectedProvinces.push(availableProvinces[randomIndex]);
+          // 标记为已使用
+          this.usedProvinceNumbers.add(availableProvinces[randomIndex].number);
+          // 更新UI状态
+          this.usedPegCount = this.usedProvinceNumbers.size;
+        }
+      }
+      
+      // 创建卡片（每对数据创建2张卡片，一张显示matchType1，一张显示matchType2）
+      this.cards = [];
+      let cardId = 0;
+      for (const province of selectedProvinces) {
+        // 第一张卡片（显示 matchType1）
+        this.cards.push({
+          id: cardId++,
+          dataType: '34省',
+          province: province,
+          displayType: this.matchType1,
+          isFlipped: true,
+          isMatched: false,
+          isSelected: false
+        });
+        // 第二张卡片（显示 matchType2，配对）
+        this.cards.push({
+          id: cardId++,
+          dataType: '34省',
+          province: province,
+          displayType: this.matchType2,
+          isFlipped: true,
+          isMatched: false,
+          isSelected: false
+        });
+      }
+    } else if (this.dataType === '36计' || this.dataType === '三字经') {
+      // 获取未使用过的简单数据项
+      const availableItems = this.allSimpleItems.filter(item => !this.usedSimpleItemNumbers.has(item.number));
+      
+      // 如果所有数据都已使用，游戏结束
+      if (availableItems.length === 0) {
+        this.isGameOver = true;
+        if (this.timer !== null) {
+          clearInterval(this.timer);
+          this.timer = null;
+        }
+        return;
+      }
+      
+      // 随机抽取6个数据（12张卡片）
+      const selectedItems: SimpleItem[] = [];
+      const usedIndices: Set<number> = new Set();
+      
+      const maxCount = Math.min(6, availableItems.length);
+      while (selectedItems.length < maxCount) {
+        const randomIndex = Math.floor(Math.random() * availableItems.length);
+        if (!usedIndices.has(randomIndex)) {
+          usedIndices.add(randomIndex);
+          selectedItems.push(availableItems[randomIndex]);
+          // 标记为已使用
+          this.usedSimpleItemNumbers.add(availableItems[randomIndex].number);
+          // 更新UI状态
+          this.usedPegCount = this.usedSimpleItemNumbers.size;
+        }
+      }
+      
+      // 创建卡片（每对数据创建2张卡片，一张显示matchType1，一张显示matchType2）
+      this.cards = [];
+      let cardId = 0;
+      for (const item of selectedItems) {
+        // 第一张卡片（显示 matchType1）
+        this.cards.push({
+          id: cardId++,
+          dataType: this.dataType,
+          simpleItem: item,
+          displayType: this.matchType1,
+          isFlipped: true,
+          isMatched: false,
+          isSelected: false
+        });
+        // 第二张卡片（显示 matchType2，配对）
+        this.cards.push({
+          id: cardId++,
+          dataType: this.dataType,
+          simpleItem: item,
+          displayType: this.matchType2,
+          isFlipped: true,
+          isMatched: false,
+          isSelected: false
+        });
+      }
     }
     
     // 打乱卡片顺序
@@ -184,14 +345,38 @@ struct MatchGame {
     for (let i = 0; i < this.cards.length; i++) {
       if (i === cardIndex) {
         // 切换选中状态
-        newCards.push({
-          id: this.cards[i].id,
-          peg: this.cards[i].peg,
-          displayType: this.cards[i].displayType,
-          isFlipped: this.cards[i].isFlipped,
-          isMatched: this.cards[i].isMatched,
-          isSelected: !this.cards[i].isSelected
-        });
+        const card = this.cards[i];
+        if (card.dataType === '110数字桩') {
+          newCards.push({
+            id: card.id,
+            dataType: card.dataType,
+            peg: card.peg,
+            displayType: card.displayType,
+            isFlipped: card.isFlipped,
+            isMatched: card.isMatched,
+            isSelected: !card.isSelected
+          });
+        } else if (card.dataType === '34省') {
+          newCards.push({
+            id: card.id,
+            dataType: card.dataType,
+            province: card.province,
+            displayType: card.displayType,
+            isFlipped: card.isFlipped,
+            isMatched: card.isMatched,
+            isSelected: !card.isSelected
+          });
+        } else if (card.dataType === '36计' || card.dataType === '三字经') {
+          newCards.push({
+            id: card.id,
+            dataType: card.dataType,
+            simpleItem: card.simpleItem,
+            displayType: card.displayType,
+            isFlipped: card.isFlipped,
+            isMatched: card.isMatched,
+            isSelected: !card.isSelected
+          });
+        }
       } else {
         newCards.push(this.cards[i]);
       }
@@ -243,35 +428,96 @@ struct MatchGame {
     const card1 = this.cards[card1Index];
     const card2 = this.cards[card2Index];
 
-    // 两两配对：必须一个是 matchType1，一个是 matchType2，且对应同一个 NumberPeg
-    const isMatch = card1.peg.number === card2.peg.number && 
-                    card1.displayType !== card2.displayType;
+    // 两两配对：必须一个是 matchType1，一个是 matchType2，且对应同一个数据
+    let isMatch = false;
+    if (card1.dataType === '110数字桩' && card2.dataType === '110数字桩') {
+      isMatch = card1.peg !== undefined && card2.peg !== undefined &&
+                card1.peg.number === card2.peg.number && 
+                card1.displayType !== card2.displayType;
+    } else if (card1.dataType === '34省' && card2.dataType === '34省') {
+      isMatch = card1.province !== undefined && card2.province !== undefined &&
+                card1.province.number === card2.province.number && 
+                card1.displayType !== card2.displayType;
+    } else if ((card1.dataType === '36计' || card1.dataType === '三字经') && 
+               (card2.dataType === '36计' || card2.dataType === '三字经') &&
+               card1.dataType === card2.dataType) {
+      isMatch = card1.simpleItem !== undefined && card2.simpleItem !== undefined &&
+                card1.simpleItem.number === card2.simpleItem.number && 
+                card1.displayType !== card2.displayType;
+    }
 
     // 重新创建数组以触发状态更新
     const newCards: GameCard[] = [];
     for (let i = 0; i < this.cards.length; i++) {
       if (i === card1Index || i === card2Index) {
         // 更新卡片状态
+        const card = this.cards[i];
         if (isMatch) {
           // 匹配成功：标记为已匹配（会消失）
-          newCards.push({
-            id: this.cards[i].id,
-            peg: this.cards[i].peg,
-            displayType: this.cards[i].displayType,
-            isFlipped: true,
-            isMatched: true,
-            isSelected: false
-          });
+          if (card.dataType === '110数字桩') {
+            newCards.push({
+              id: card.id,
+              dataType: card.dataType,
+              peg: card.peg,
+              displayType: card.displayType,
+              isFlipped: true,
+              isMatched: true,
+              isSelected: false
+            });
+          } else if (card.dataType === '34省') {
+            newCards.push({
+              id: card.id,
+              dataType: card.dataType,
+              province: card.province,
+              displayType: card.displayType,
+              isFlipped: true,
+              isMatched: true,
+              isSelected: false
+            });
+          } else if (card.dataType === '36计' || card.dataType === '三字经') {
+            newCards.push({
+              id: card.id,
+              dataType: card.dataType,
+              simpleItem: card.simpleItem,
+              displayType: card.displayType,
+              isFlipped: true,
+              isMatched: true,
+              isSelected: false
+            });
+          }
         } else {
           // 匹配失败：取消选中状态
-          newCards.push({
-            id: this.cards[i].id,
-            peg: this.cards[i].peg,
-            displayType: this.cards[i].displayType,
-            isFlipped: this.cards[i].isFlipped,
-            isMatched: this.cards[i].isMatched,
-            isSelected: false
-          });
+          if (card.dataType === '110数字桩') {
+            newCards.push({
+              id: card.id,
+              dataType: card.dataType,
+              peg: card.peg,
+              displayType: card.displayType,
+              isFlipped: card.isFlipped,
+              isMatched: card.isMatched,
+              isSelected: false
+            });
+          } else if (card.dataType === '34省') {
+            newCards.push({
+              id: card.id,
+              dataType: card.dataType,
+              province: card.province,
+              displayType: card.displayType,
+              isFlipped: card.isFlipped,
+              isMatched: card.isMatched,
+              isSelected: false
+            });
+          } else if (card.dataType === '36计' || card.dataType === '三字经') {
+            newCards.push({
+              id: card.id,
+              dataType: card.dataType,
+              simpleItem: card.simpleItem,
+              displayType: card.displayType,
+              isFlipped: card.isFlipped,
+              isMatched: card.isMatched,
+              isSelected: false
+            });
+          }
         }
       } else {
         newCards.push(this.cards[i]);
@@ -307,50 +553,113 @@ struct MatchGame {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
+  /**
+   * 获取游戏结束提示信息
+   */
+  getGameOverMessage(): string {
+    if (this.dataType === '110数字桩') {
+      return '所有110个数字桩已完成！';
+    } else if (this.dataType === '34省') {
+      return '所有34个省已完成！';
+    } else if (this.dataType === '36计') {
+      return '所有36计已完成！';
+    } else if (this.dataType === '三字经') {
+      return '所有三字经内容已完成！';
+    }
+    return '游戏完成！';
+  }
+
+  /**
+   * 获取总数据数量
+   */
+  getTotalCount(): number {
+    if (this.dataType === '110数字桩') {
+      return 110;
+    } else if (this.dataType === '34省') {
+      return 34;
+    } else if (this.dataType === '36计') {
+      return 36;
+    } else if (this.dataType === '三字经') {
+      return this.allSimpleItems.length;
+    }
+    return 110;
+  }
+
   build() {
     Column() {
-      // 顶部统计信息
-      Row() {
-        Column() {
-          Text('时间')
-            .fontSize(12)
-            .fontColor('#666666')
-          Text(this.formatTime(this.elapsedTime))
-            .fontSize(16)
-            .fontWeight(FontWeight.Bold)
-            .margin({ top: 5 })
-        }
-        .flexGrow(1)
+      // 顶部栏 + 统计
+      Column() {
+        Row() {
+          Button() {
+            Image($r('sys.media.ohos_ic_back'))
+              .width(24)
+              .height(24)
+          }
+          .width(44)
+          .height(44)
+          .backgroundColor(Color.Transparent)
+          .onClick(() => {
+            router.back();
+          })
 
-        Column() {
-          Text('正确')
-            .fontSize(12)
-            .fontColor('#666666')
-          Text(this.correctCount.toString())
-            .fontSize(16)
-            .fontWeight(FontWeight.Bold)
-            .fontColor('#4CAF50')
-            .margin({ top: 5 })
-        }
-        .flexGrow(1)
+          Text('连连看')
+            .layoutWeight(1)
+            .textAlign(TextAlign.Center)
+            .fontSize(20)
+            .fontWeight(FontWeight.Medium)
 
-        Column() {
-          Text('错误')
-            .fontSize(12)
-            .fontColor('#666666')
-          Text(this.errorCount.toString())
-            .fontSize(16)
-            .fontWeight(FontWeight.Bold)
-            .fontColor('#F44336')
-            .margin({ top: 5 })
+          Blank()
+            .width(44)
+            .height(44)
         }
-        .flexGrow(1)
+        .width('100%')
+        .height(56)
+        .padding({ left: 12, right: 12 })
+        .justifyContent(FlexAlign.Start)
+        .alignItems(VerticalAlign.Center)
+
+        Row() {
+          Column() {
+            Text('时间')
+              .fontSize(12)
+              .fontColor('#666666')
+            Text(this.formatTime(this.elapsedTime))
+              .fontSize(16)
+              .fontWeight(FontWeight.Bold)
+              .margin({ top: 5 })
+          }
+          .flexGrow(1)
+
+          Column() {
+            Text('正确')
+              .fontSize(12)
+              .fontColor('#666666')
+            Text(this.correctCount.toString())
+              .fontSize(16)
+              .fontWeight(FontWeight.Bold)
+              .fontColor('#4CAF50')
+              .margin({ top: 5 })
+          }
+          .flexGrow(1)
+
+          Column() {
+            Text('错误')
+              .fontSize(12)
+              .fontColor('#666666')
+            Text(this.errorCount.toString())
+              .fontSize(16)
+              .fontWeight(FontWeight.Bold)
+              .fontColor('#F44336')
+              .margin({ top: 5 })
+          }
+          .flexGrow(1)
+        }
+        .width('100%')
+        .height(60)
+        .padding({ left: 20, right: 20 })
+        .backgroundColor(Color.White)
+        .justifyContent(FlexAlign.SpaceAround)
       }
-      .width('100%')
-      .height(60)
-      .padding({ left: 20, right: 20 })
-      .backgroundColor(Color.White)
-      .justifyContent(FlexAlign.SpaceAround)
 
       // 游戏区域
       Grid() {
@@ -370,7 +679,7 @@ struct MatchGame {
 
       // 进度提示
       if (!this.isGameOver) {
-        Text(`进度: ${this.usedPegCount}/110`)
+        Text(`进度: ${this.usedPegCount}/${this.getTotalCount()}`)
           .fontSize(14)
           .fontColor('#666666')
           .margin({ top: 10 })
@@ -385,7 +694,7 @@ struct MatchGame {
               .fontWeight(FontWeight.Bold)
               .margin({ bottom: 20 })
             
-            Text('所有110个数字桩已完成！')
+            Text(this.getGameOverMessage())
               .fontSize(16)
               .fontColor('#666666')
               .margin({ bottom: 20 })
@@ -408,7 +717,13 @@ struct MatchGame {
                 .height(45)
                 .backgroundColor('#4CAF50')
                 .onClick(() => {
-                  this.usedPegNumbers.clear();
+                  if (this.dataType === '110数字桩') {
+                    this.usedPegNumbers.clear();
+                  } else if (this.dataType === '34省') {
+                    this.usedProvinceNumbers.clear();
+                  } else if (this.dataType === '36计' || this.dataType === '三字经') {
+                    this.usedSimpleItemNumbers.clear();
+                  }
                   this.usedPegCount = 0;
                   this.elapsedTime = 0;
                   this.correctCount = 0;
@@ -463,25 +778,67 @@ struct MatchGame {
       Stack() {
         // 卡片内容层（底层）
         Column() {
-          if (card.displayType === '桩序号') {
-            // 显示数字序号
-            Text(card.peg.number.toString())
-              .fontSize(36)
-              .fontWeight(FontWeight.Bold)
-              .fontColor('#333333')
-          } else if (card.displayType === '桩名称') {
-            // 显示编码（桩名称）
-            Text(card.peg.code)
-              .fontSize(22)
-              .fontWeight(FontWeight.Medium)
-              .fontColor('#333333')
-          } else if (card.displayType === '桩图像') {
-            // 显示图片，填满整个卡片
-            Image($r(`app.media.${card.peg.imageName.replace('.jpg', '')}`))
-              .width('100%')
-              .height('100%')
-              .objectFit(ImageFit.Cover)
-              .borderRadius(8)
+          if (card.dataType === '110数字桩' && card.peg) {
+            if (card.displayType === '桩序号') {
+              // 显示数字序号
+              Text(card.peg.number.toString())
+                .fontSize(36)
+                .fontWeight(FontWeight.Bold)
+                .fontColor('#333333')
+            } else if (card.displayType === '桩名称') {
+              // 显示编码（桩名称）
+              Text(card.peg.code)
+                .fontSize(22)
+                .fontWeight(FontWeight.Medium)
+                .fontColor('#333333')
+            } else if (card.displayType === '桩图像') {
+              // 显示图片，填满整个卡片
+              Image($r(`app.media.${card.peg.imageName.replace('.jpg', '')}`))
+                .width('100%')
+                .height('100%')
+                .objectFit(ImageFit.Cover)
+                .borderRadius(8)
+            }
+          } else if (card.dataType === '34省' && card.province) {
+            if (card.displayType === '省序号') {
+              // 显示省序号
+              Text(card.province.number.toString())
+                .fontSize(36)
+                .fontWeight(FontWeight.Bold)
+                .fontColor('#333333')
+            } else if (card.displayType === '省全称') {
+              // 显示省全称
+              Text(card.province.fullName)
+                .fontSize(22)
+                .fontWeight(FontWeight.Medium)
+                .fontColor('#333333')
+            } else if (card.displayType === '省会') {
+              // 显示省会
+              Text(card.province.capital)
+                .fontSize(22)
+                .fontWeight(FontWeight.Medium)
+                .fontColor('#333333')
+            } else if (card.displayType === '省简称') {
+              // 显示省简称
+              Text(card.province.shortName)
+                .fontSize(28)
+                .fontWeight(FontWeight.Bold)
+                .fontColor('#333333')
+            }
+          } else if ((card.dataType === '36计' || card.dataType === '三字经') && card.simpleItem) {
+            if (card.displayType === '序号') {
+              // 显示序号
+              Text(card.simpleItem.number.toString())
+                .fontSize(36)
+                .fontWeight(FontWeight.Bold)
+                .fontColor('#333333')
+            } else if (card.displayType === '内容') {
+              // 显示内容
+              Text(card.simpleItem.content)
+                .fontSize(22)
+                .fontWeight(FontWeight.Medium)
+                .fontColor('#333333')
+            }
           }
         }
         .width('100%')

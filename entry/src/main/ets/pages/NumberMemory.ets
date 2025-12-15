@@ -381,6 +381,34 @@ struct NumberMemory {
 
   build() {
     Column() {
+      // 顶部栏
+      Row() {
+        Button() {
+          Image($r('sys.media.ohos_ic_back'))
+            .width(24)
+            .height(24)
+        }
+        .width(44)
+        .height(44)
+        .backgroundColor(Color.Transparent)
+        .onClick(() => {
+          router.back();
+        })
+        Text('数字记忆')
+          .layoutWeight(1)
+          .textAlign(TextAlign.Center)
+          .fontSize(20)
+          .fontWeight(FontWeight.Medium)
+        Blank()
+          .width(44)
+          .height(44)
+      }
+      .padding({ left: 12, right: 12, top: 12 })
+      .width('100%')
+      .height(56)
+      .justifyContent(FlexAlign.Start)
+      .alignItems(VerticalAlign.Center)
+
       // 顶部时间显示
       if (!this.showResult) {
         Row() {
