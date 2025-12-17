@@ -16,7 +16,7 @@ export struct BottomNavigation {
 
   // 导航项配置
   private readonly tabs: TabItem[] = [
-    { icon: '训', label: '每日训练' },
+    { icon: '练', label: '每日训练' },
     { icon: '宫', label: '记忆宫殿' },
     { icon: '我', label: '我的' }
   ];

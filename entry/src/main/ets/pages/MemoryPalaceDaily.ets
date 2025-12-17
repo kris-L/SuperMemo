@@ -229,7 +229,7 @@ struct MemoryPalaceDaily {
       .onClick(() => {
         if (mindMap.id) {
           router.pushUrl({
-            url: 'pages/MindMapEditor',
+            url: 'pages/MindMapBuilder',
             params: { mindMapId: mindMap.id }
           });
         }

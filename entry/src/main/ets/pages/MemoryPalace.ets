@@ -33,15 +33,15 @@ export struct MemoryPalace {
         router.pushUrl({ url: 'pages/MemoryPalacePracticeSelect' });
       }
     },
-    {
-      icon: $r('app.media.ic_book'),
-      title: '记忆宫殿文章记忆',
-      description: '使用记忆宫殿记忆文章内容',
-      onClick: () => {
-        // TODO: 跳转到文章记忆页面
-        console.info('跳转到文章记忆');
-      }
-    },
+    // {
+    //   icon: $r('app.media.ic_book'),
+    //   title: '记忆宫殿文章记忆',
+    //   description: '使用记忆宫殿记忆文章内容',
+    //   onClick: () => {
+    //     // TODO: 跳转到文章记忆页面
+    //     console.info('跳转到文章记忆');
+    //   }
+    // },
     {
       icon: $r('app.media.ic_everyday_memory'),
       title: '记忆宫殿日常记忆',

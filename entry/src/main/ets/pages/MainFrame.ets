@@ -1,6 +1,6 @@
 import { router } from '@kit.ArkUI';
 import { BottomNavigation } from '../components/BottomNavigation';
-import { Index } from './Home';
+import { Home } from './Home';
 import { MemoryPalace } from './MemoryPalace';
 import { MyPage } from './MyPage';
 
@@ -11,10 +11,11 @@ import { MyPage } from './MyPage';
 @Component
 struct MainFrame {
   @State currentTabIndex: number = 0; // 当前选中的标签页索引
+  @State indexRefreshKey: number = 0; // 用于触发首页刷新的key
 
   // 标签页内容
   private readonly tabPages: string[] = [
-    'pages/Index',           // 每日训练
+    'pages/Home',           // 每日训练
     'pages/MemoryPalace',   // 记忆宫殿
     'pages/MyPage'          // 我的
   ];
@@ -28,12 +29,25 @@ struct MainFrame {
   }
 
   /**
+   * 页面显示时触发（从其他页面返回时）
+   */
+  onPageShow() {
+    // 如果当前在首页，强制刷新首页组件以触发数据更新
+    if (this.currentTabIndex === 0) {
+      this.indexRefreshKey++;
+    }
+  }
+
+  /**
    * 切换标签页
    */
   onTabChange(index: number) {
     if (this.currentTabIndex !== index) {
       this.currentTabIndex = index;
-      // 可以在这里添加页面切换动画等逻辑
+      // 当切换回首页时，触发刷新
+      if (index === 0) {
+        this.indexRefreshKey++;
+      }
     }
   }
 
@@ -43,7 +57,9 @@ struct MainFrame {
       Column() {
         if (this.currentTabIndex === 0) {
           // 每日训练 - 显示Index页面内容
-          Index()
+          // 使用key来强制刷新组件，同时传递refreshTrigger来触发数据刷新
+          Home({ refreshTrigger: this.indexRefreshKey })
+            .key(`index_${this.indexRefreshKey}`)
         } else if (this.currentTabIndex === 1) {
           // 记忆宫殿
           MemoryPalace()

@@ -1,6 +1,7 @@
 import { router } from '@kit.ArkUI';
 import { promptAction } from '@kit.ArkUI';
 import { PiGenerator } from '../utils/PiGenerator';
+import { DatabaseManager } from '../database/DatabaseManager';
 
 /**
  * 数字行数据
@@ -39,6 +40,7 @@ struct NumberMemory {
   private piEndDigit: number = 100; // 圆周率结束位数
   private memoryTimer: number | null = null; // 记忆计时器
   private recallTimer: number | null = null; // 回忆计时器
+  private dbManager: DatabaseManager = DatabaseManager.getInstance();
 
   aboutToAppear() {
     // 获取路由参数
@@ -323,13 +325,24 @@ struct NumberMemory {
   /**
    * 提交答案
    */
-  onSubmit() {
+  async onSubmit() {
     // 停止回忆计时
     this.stopRecallTimer();
     this.totalTime = this.memoryTime + this.recallTime;
     
     // 计算统计信息
     this.calculateStatistics();
+    
+    // 记录训练数据
+    try {
+      await this.dbManager.insertTrainingRecord({
+        gameType: '数字记忆',
+        duration: this.totalTime,
+        createTime: Date.now()
+      });
+    } catch (err) {
+      console.error('记录训练数据失败', err);
+    }
     
     // 显示结果报告
     this.showResult = true;

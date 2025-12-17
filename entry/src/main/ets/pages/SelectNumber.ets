@@ -1,6 +1,7 @@
 import { router, promptAction, AppStorageV2 } from '@kit.ArkUI';
 import { NumberPegService } from '../utils/NumberPegService';
 import { NumberPeg } from '../model/NumberPeg';
+import { DatabaseManager } from '../database/DatabaseManager';
 
 interface OptionStyle {
   bg: string;
@@ -33,6 +34,7 @@ struct SelectNumber {
 
   private timer: number | null = null;
   private stats?: SelectNumberStats;
+  private dbManager: DatabaseManager = DatabaseManager.getInstance();
 
   aboutToAppear() {
     this.initStats();
@@ -273,6 +275,11 @@ struct SelectNumber {
   }
 
   gotoNext() {
+    //测试用的
+    // if (this.currentIndex + 1 == 10) {
+    //    this.finishGame();
+    //    return;
+    // }
     if (this.currentIndex + 1 >= this.questionOrder.length) {
       this.finishGame();
       return;
@@ -288,7 +295,7 @@ struct SelectNumber {
     }
   }
 
-  finishGame() {
+  async finishGame() {
     this.stopTimer();
     this.isFinished = true;
     // 更新统计
@@ -298,6 +305,17 @@ struct SelectNumber {
     }
     this.trainCount++;
     this.saveStats();
+    
+    // 记录训练数据
+    try {
+      await this.dbManager.insertTrainingRecord({
+        gameType: '看图选数',
+        duration: this.elapsedTime,
+        createTime: Date.now()
+      });
+    } catch (err) {
+      console.error('记录训练数据失败', err);
+    }
   }
 
   accuracy(): string {
@@ -527,8 +545,9 @@ struct SelectNumber {
                 .height(44)
                 .backgroundColor('#9E9E9E')
                 .onClick(() => {
+                  // 清空路由栈并返回到主框架页面（首页）
                   router.clear();
-                  router.replaceUrl({ url: 'pages/Index' });
+                  router.replaceUrl({ url: 'pages/MainFrame', params: { tabIndex: 0 } });
                 })
             }
             .justifyContent(FlexAlign.SpaceBetween)

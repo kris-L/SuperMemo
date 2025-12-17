@@ -16,6 +16,11 @@
     "pages/SelectNumber",
     "pages/BoneMatchSelect",
     "pages/BoneMatch",
-    "pages/MemoryPalaceDaily"
+    "pages/MemoryPalaceDaily",
+    "pages/MindMapBuilder",
+    "pages/TodayTraining",
+    "pages/PointsRecord",
+    "pages/TrainingRecord",
+    "pages/GuideList"
   ]
 }

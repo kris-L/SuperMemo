@@ -214,7 +214,7 @@ struct MatchGameSelect {
         .height(50)
         .fontSize(18)
         .fontWeight(FontWeight.Medium)
-        .backgroundColor('#4CAF50')
+        .backgroundColor('#2196F3')
         .onClick(() => {
           // 验证数据类型
           if (this.selectedDataType !== '110数字桩' && 

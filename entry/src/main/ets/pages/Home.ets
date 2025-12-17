@@ -1,120 +1,266 @@
 import { router } from '@kit.ArkUI';
+import { DatabaseManager } from '../database/DatabaseManager';
 
 /**
- * 首页 - 9宫格布局
+ * 首页 - 每日训练
  */
 @Component
-export struct Index {
+export struct Home {
+  @State todayCompletedRounds: number = 0;
+  @State todayTotalRounds: number = 10;
+  @State refreshKey: number = 0; // 用于触发刷新的key
+  @Prop @Watch('onRefreshTriggerChange') refreshTrigger: number = 0; // 接收外部刷新信号
+
+  private dbManager: DatabaseManager = DatabaseManager.getInstance();
+
+  async aboutToAppear() {
+    // 页面每次显示时刷新今日训练进度（包括从今日训练页面返回时）
+    await this.loadTodayTrainingProgress();
+  }
+
+  /**
+   * 监听刷新触发器的变化，当从其他页面返回时会触发
+   * 这是解决组件生命周期问题的关键方法
+   */
+  onRefreshTriggerChange(propName: string) {
+    // 当刷新触发器变化时，重新加载数据
+    this.loadTodayTrainingProgress();
+  }
+
+  /**
+   * 页面显示时触发（包括从其他页面返回时）
+   * 注意：对于组件来说，这个方法可能不会被调用
+   */
+  onPageShow() {
+    // 刷新今日训练进度
+    this.loadTodayTrainingProgress();
+  }
+
   build() {
     Column() {
-      // 标题
-      Text('记忆法训练')
+      // 使用 Scroll 包裹主体内容，避免小屏设备内容被挤到屏幕外
+      Scroll() {
+        Column() {
+          // 顶部标题
+          Text('每日训练')
         .fontSize(24)
         .fontWeight(FontWeight.Bold)
-        .margin({ top: 20, bottom: 30 })
+            .fontColor('#333333')
+            .margin({ top: 20, bottom: 20 })
+            .padding({ left: 20, right: 20 })
+            .width('100%')
 
-      // 9宫格布局
+          // 四个功能卡片（2x2）
       Grid() {
-        // 连连看按钮
+            // 编码练习（主色卡片）
         GridItem() {
-          this.createGameButton('连连看', '#4CAF50', () => {
-            router.pushUrl({ url: 'pages/MatchGameSelect' });
-          });
+              this.buildFeatureCard(
+                $r('app.media.ic_coding_train'),
+                '编码练习',
+                '通过编码规则，快速强化数字与图像联想',
+                true,
+                () => {
+                  router.pushUrl({ url: 'pages/CodeTrainingSelect' });
+                }
+              )
         }
 
-        // 数字记忆按钮
+            // 连连看
         GridItem() {
-          this.createGameButton('数字记忆', '#2196F3', () => {
-            router.pushUrl({ url: 'pages/NumberMemorySelect' });
-          });
+              this.buildFeatureCard(
+                $r('app.media.ic_link_game'),
+                '连连看',
+                '趣味连线记忆，锻炼专注力和短时记忆',
+                false,
+                () => {
+                  router.pushUrl({ url: 'pages/MatchGameSelect' });
+                }
+              )
         }
 
-        // 编码训练按钮
+            // 数字记忆
         GridItem() {
-          this.createGameButton('编码训练', '#FF9800', () => {
-            router.pushUrl({ url: 'pages/CodeTrainingSelect' });
-          });
-        }
-
-        // 预留位置（其他功能按钮）
-        GridItem() {
-          this.createGameButton('待开发', '#9E9E9E', () => {
-            // 预留
-          });
+              this.buildFeatureCard(
+                $r('app.media.ic_number_memory'),
+                '数字记忆',
+                '记住更多数字，提升工作与学习效率',
+                false,
+                () => {
+                  router.pushUrl({ url: 'pages/NumberMemorySelect' });
+                }
+              )
         }
 
         // 骨肉相连
         GridItem() {
-          this.createGameButton('骨肉相连', '#FF9800', () => {
+              this.buildFeatureCard(
+                $r('app.media.ic_bone_match'),
+                '骨肉相连',
+                '通过联想配对，训练图像与关系记忆',
+                false,
+                () => {
             router.pushUrl({ url: 'pages/BoneMatchSelect' });
-          });
-        }
+                }
+              )
+            }
+          }
+          .columnsTemplate('1fr 1fr')
+          .columnsGap(12)
+          .rowsGap(12)
+          .width('100%')
+          .padding({ left: 16, right: 16, bottom: 20 })
 
-        // 扑克记忆
-        GridItem() {
-          this.createGameButton('扑克记忆', '#9C27B0', () => {
+          // 今日训练卡片
+          Column() {
+            Text('今日训练')
+              .fontSize(20)
+              .fontWeight(FontWeight.Medium)
+              .fontColor('#FFFFFF')
+              .margin({ bottom: 8 })
+
+            // 进度条
+            Column() {
+              // 背景条
+              Column() {
+              }
+              .width('100%')
+              .height(10)
+              .backgroundColor('#5B96FF')
+              .borderRadius(5)
+
+              // 前景进度（当前先写死 0，用于样式预览）
+              Column() {
+              }
+              .width(this.todayTotalRounds > 0 ? `${Math.min(this.todayCompletedRounds * 100 / this.todayTotalRounds, 100)}%` : '0%')
+              .height(10)
+              .backgroundColor('#FF9B45')
+              .borderRadius(5)
+              .position({ x: 0, y: 0 })
+            }
+            .width('100%')
+            .margin({ bottom: 6 })
+
+            // 进度数字
+            Text(`${this.todayCompletedRounds} / ${this.todayTotalRounds}`)
+              .fontSize(16)
+              .fontColor('#FFFFFF')
+              .margin({ bottom: 12 })
+
+            // 开始训练按钮（后续实现具体逻辑）
+            Button('开始训练')
+              .width('100%')
+              .height(40)
+              .backgroundColor('#FF9800')
+              .fontColor(Color.White)
+              .fontSize(16)
+              .fontWeight(FontWeight.Medium)
+              .borderRadius(20)
+              .onClick(() => {
+                router.pushUrl({ url: 'pages/TodayTraining' });
+              })
+          }
+          .padding({ left: 16, right: 16, top: 12, bottom: 16 })
+          .backgroundColor('#4485fd')
+          .borderRadius(12)
+          .shadow({ radius: 6, color: '#1F000000', offsetX: 0, offsetY: 2 })
+          .margin({ left: 16, right: 16, bottom: 16 })
+
+          // 扑克记忆卡片
+          Row() {
+            // 左侧图标
+            Image($r('app.media.ic_poker'))
+              .width(48)
+              .height(48)
+              .margin({ right: 12 })
+
+            // 右侧文字
+            Column() {
+              Text('扑克记忆')
+                .fontSize(18)
+                .fontWeight(FontWeight.Medium)
+                .fontColor('#333333')
+                .margin({ bottom: 4 })
+
+              Text('通过快速记忆整副扑克牌，挑战极限记忆力')
+                .fontSize(14)
+                .fontColor('#666666')
+                .maxLines(2)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+            }
+            .layoutWeight(1)
+            .alignItems(HorizontalAlign.Start)
+          }
+          .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+          .backgroundColor(Color.White)
+          .borderRadius(12)
+          .shadow({ radius: 6, color: '#1F000000', offsetX: 0, offsetY: 2 })
+          .margin({ left: 16, right: 16, bottom: 24 })
+          .onClick(() => {
             router.pushUrl({ url: 'pages/PokerMemory' });
-          });
+          })
         }
-
-        GridItem() {
-          this.createGameButton('待开发', '#9E9E9E', () => {
-            // 预留
-          });
-        }
-
-        GridItem() {
-          this.createGameButton('待开发', '#9E9E9E', () => {
-            // 预留
-          });
-        }
-
-        GridItem() {
-          this.createGameButton('待开发', '#9E9E9E', () => {
-            // 预留
-          });
-        }
-
-        GridItem() {
-          this.createGameButton('待开发', '#9E9E9E', () => {
-            // 预留
-          });
-        }
-
-        GridItem() {
-          this.createGameButton('待开发', '#9E9E9E', () => {
-            // 预留
-          });
-        }
-
-        GridItem() {
-          this.createGameButton('待开发', '#9E9E9E', () => {
-            // 预留
-          });
-        }
+        .width('100%')
       }
-      .columnsTemplate('1fr 1fr 1fr')
-      .rowsTemplate('1fr 1fr 1fr')
-      .columnsGap(15)
-      .rowsGap(15)
-      .width('90%')
-      .height('60%')
+      .width('100%')
+      .layoutWeight(1)
     }
     .width('100%')
     .height('100%')
-    .justifyContent(FlexAlign.Center)
-    .backgroundColor('#F5F5F5')
+    .backgroundColor('#92c9e9')
+  }
+
+  private async loadTodayTrainingProgress() {
+    try {
+      const now = new Date();
+      const dateKey = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+      const progress = await this.dbManager.getDailyTrainingProgress(dateKey);
+      this.todayCompletedRounds = progress.roundsCompleted;
+      this.todayTotalRounds = progress.totalRounds || 10;
+    } catch (err) {
+      console.error('加载今日训练进度失败', err);
+    }
   }
 
   @Builder
-  createGameButton(text: string, color: string, onClick: () => void) {
-    Button(text)
+  buildFeatureCard(iconRes: Resource, title: string, desc: string, isPrimary: boolean, onClick: () => void) {
+    Column() {
+      // 图片
+      Image(iconRes)
+        .width(40)
+        .height(40)
+        .objectFit(ImageFit.Contain)
+        .margin({ bottom: 8 })
+
+      // 功能标题
+      Text(title)
+        .fontSize(16)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(isPrimary ? Color.White : '#333333')
+        .margin({ bottom: 4 })
+
+      // 功能说明
+      Text(desc)
+        .fontSize(12)
+        .fontColor(isPrimary ? '#E3F2FF' : '#777777')
+        .maxLines(2)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+    }
       .width('100%')
-      .height('100%')
-      .fontSize(18)
-      .fontWeight(FontWeight.Medium)
-      .backgroundColor(color)
+    .padding({ top: 12, bottom: 12, left: 12, right: 12 })
+    .backgroundColor(isPrimary ? '#518dfd' : '#fdeadc')
       .borderRadius(12)
-      .onClick(onClick)
+    .shadow({ radius: 4, color: '#19000000', offsetX: 0, offsetY: 2 })
+    .onClick(() => {
+      onClick();
+    })
+  }
+}
+
+@Preview
+@Component
+struct TodayTrainingPreview {
+  build() {
+    // 预览首页整体布局（包含“今日训练”卡片）
+    Home()
   }
 }

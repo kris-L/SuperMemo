@@ -24,6 +24,10 @@ export default class EntryAbility extends UIAbility {
       // 初始化默认数据
       await DataInitializer.initializeDefaultData();
       await MemoryPalaceInitializer.initializeDefaultData();
+      
+      // 清理非当天的训练进度数据，确保日期变化时进度重置
+      await dbManager.cleanupOldTrainingProgress();
+      
       hilog.info(DOMAIN, 'testTag', '数据库初始化完成');
     } catch (err) {
       hilog.error(DOMAIN, 'testTag', '数据库初始化失败: %{public}s', JSON.stringify(err));
