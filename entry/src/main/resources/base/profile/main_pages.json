@@ -21,6 +21,7 @@
     "pages/TodayTraining",
     "pages/PointsRecord",
     "pages/TrainingRecord",
-    "pages/GuideList"
+    "pages/GuideList",
+    "pages/GuideDetail"
   ]
 }

@@ -11,6 +11,10 @@
     {
       "name": "EntryAbility_label",
       "value": "超级记忆"
+    },
+    {
+      "name": "internet_permission_reason",
+      "value": "用于显示学习指南中的HTML内容"
     }
   ]
 }

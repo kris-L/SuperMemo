@@ -1,5 +1,4 @@
-import { router } from '@kit.ArkUI';
-import { promptAction } from '@kit.ArkUI';
+import { router, promptAction } from '@kit.ArkUI';
 import { PiGenerator } from '../utils/PiGenerator';
 import { DatabaseManager } from '../database/DatabaseManager';
 
@@ -41,6 +40,7 @@ struct NumberMemory {
   private memoryTimer: number | null = null; // 记忆计时器
   private recallTimer: number | null = null; // 回忆计时器
   private dbManager: DatabaseManager = DatabaseManager.getInstance();
+  private listScroller: ListScroller = new ListScroller(); // 列表滚动控制器
 
   aboutToAppear() {
     // 获取路由参数
@@ -236,11 +236,19 @@ struct NumberMemory {
           isRecalling: row.isRecalling
         });
         this.currentInputPosition = newInput.length;
+        console.info(`[NumberMemory] 输入数字: ${digit}, 当前行: ${row.rowIndex}, 新输入: ${newInput}`);
       } else {
-        newRows.push(this.rows[i]);
+        newRows.push({
+          rowIndex: this.rows[i].rowIndex,
+          originalDigits: this.rows[i].originalDigits,
+          userInput: this.rows[i].userInput,
+          isRecalling: this.rows[i].isRecalling
+        });
       }
     }
-    this.rows = newRows;
+    // 创建新数组引用，确保触发UI更新
+    this.rows = [...newRows];
+    console.info(`[NumberMemory] 更新后的rows长度: ${this.rows.length}, 当前行输入: ${this.rows[rowIndex]?.userInput}`);
     
     // 如果当前行已满，自动移动到下一行
     const updatedRow = newRows[rowIndex];
@@ -248,6 +256,39 @@ struct NumberMemory {
       if (this.currentInputRow < this.rows.length) {
         this.currentInputRow++;
         this.currentInputPosition = 0;
+      }
+    }
+    
+    // 自动滚动到当前输入行（延迟执行，确保UI更新完成）
+    if (this.isRecalling) {
+      setTimeout(() => {
+        this.scrollToCurrentRow();
+      }, 50);
+    }
+  }
+  
+  /**
+   * 滚动到当前输入行
+   * 当输入到第5行时，让第5行显示在可见区域上方，这样可以看到下面的5行
+   */
+  scrollToCurrentRow() {
+    if (!this.isRecalling) {
+      return;
+    }
+    
+    // 计算当前行在列表中的索引（从0开始）
+    const targetIndex = this.currentInputRow - 1;
+    
+    if (targetIndex >= 0 && targetIndex < this.rows.length) {
+      // 如果当前行索引小于4，不需要滚动（前4行已经在可见区域）
+      if (targetIndex >= 4) {
+        // 使用List的scrollToIndex方法滚动到目标行
+        // align参数设置为ScrollAlign.START，让目标行显示在可见区域的顶部
+        try {
+          this.listScroller.scrollToIndex(targetIndex, true, ScrollAlign.START);
+        } catch (err) {
+          console.error('滚动失败', err);
+        }
       }
     }
   }
@@ -292,6 +333,13 @@ struct NumberMemory {
       const prevRow = this.rows[this.currentInputRow - 1];
       this.currentInputPosition = prevRow.userInput.length;
       this.onUndo();
+    }
+    
+    // 自动滚动到当前输入行
+    if (this.isRecalling) {
+      setTimeout(() => {
+        this.scrollToCurrentRow();
+      }, 50);
     }
   }
 
@@ -482,9 +530,9 @@ struct NumberMemory {
       }
 
       // 内容区域（可滚动）
-      Scroll() {
-        Column() {
-          ForEach(this.rows, (row: NumberRow) => {
+      List({ space: 5, scroller: this.listScroller }) {
+        ForEach(this.rows, (row: NumberRow, index: number) => {
+          ListItem() {
             Row() {
               // 行号
               Text(`${row.rowIndex}：`)
@@ -514,15 +562,14 @@ struct NumberMemory {
             .height(50)
             .padding({ left: 20, right: 20 })
             .justifyContent(FlexAlign.Start)
-            .margin({ bottom: 5 })
-          })
-        }
-        .width('100%')
-        .padding({ top: 20, bottom: 20 })
+          }
+          .id(`row_${row.rowIndex}`)
+        }, (row: NumberRow, index: number) => `row_${row.rowIndex}_${row.userInput}_${index}`)
       }
       .layoutWeight(1)
       .scrollBar(BarState.Auto)
       .edgeEffect(EdgeEffect.Spring)
+      .padding({ top: 20, bottom: 20 })
 
       // 底部按钮区域
       if (!this.isRecalling) {
@@ -565,7 +612,7 @@ struct NumberMemory {
             }
             .width('100%')
             .justifyContent(FlexAlign.SpaceAround)
-            .margin({ bottom: 15 })
+            .margin({ bottom: 12 })
             
             // 第二行：4-6
             Row() {
@@ -575,7 +622,7 @@ struct NumberMemory {
             }
             .width('100%')
             .justifyContent(FlexAlign.SpaceAround)
-            .margin({ bottom: 15 })
+            .margin({ bottom: 12 })
             
             // 第三行：7-9
             Row() {
@@ -585,7 +632,7 @@ struct NumberMemory {
             }
             .width('100%')
             .justifyContent(FlexAlign.SpaceAround)
-            .margin({ bottom: 15 })
+            .margin({ bottom: 12 })
             
             // 第四行：撤销、0、提交
             Row() {
@@ -597,7 +644,7 @@ struct NumberMemory {
             .justifyContent(FlexAlign.SpaceAround)
           }
           .width('100%')
-          .padding({ left: 20, right: 20, top: 20, bottom: 20 })
+          .padding({ left: 20, right: 20, top: 10, bottom: 15 })
           .backgroundColor('#F5F5F5')
           
           // 返回按钮
@@ -884,7 +931,7 @@ struct NumberMemory {
   createKeyButton(text: string, onClick: () => void, color: string = '#2196F3') {
     Button(text)
       .width('28%')
-      .height(70)
+      .height(60)
       .fontSize(28)
       .fontWeight(FontWeight.Bold)
       .backgroundColor(color)

@@ -162,6 +162,10 @@ export struct MyPage {
     Column() {
       // 顶部栏
       Row() {
+        Blank()
+          .width(44)
+          .height(44)
+
         Text('我的')
           .layoutWeight(1)
           .textAlign(TextAlign.Center)
@@ -175,7 +179,7 @@ export struct MyPage {
       .width('100%')
       .height(56)
       .padding({ left: 12, right: 12 })
-      .justifyContent(FlexAlign.Start)
+      .justifyContent(FlexAlign.SpaceBetween)
       .alignItems(VerticalAlign.Center)
       .margin({ bottom: 20 })
 

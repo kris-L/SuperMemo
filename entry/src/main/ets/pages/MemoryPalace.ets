@@ -38,7 +38,6 @@ export struct MemoryPalace {
     //   title: '记忆宫殿文章记忆',
     //   description: '使用记忆宫殿记忆文章内容',
     //   onClick: () => {
-    //     // TODO: 跳转到文章记忆页面
     //     console.info('跳转到文章记忆');
     //   }
     // },
@@ -56,6 +55,10 @@ export struct MemoryPalace {
     Column() {
       // 顶部栏
       Row() {
+        Blank()
+          .width(44)
+          .height(44)
+
         Text('记忆宫殿')
           .layoutWeight(1)
           .textAlign(TextAlign.Center)
@@ -69,7 +72,7 @@ export struct MemoryPalace {
       .width('100%')
       .height(56)
       .padding({ left: 12, right: 12 })
-      .justifyContent(FlexAlign.Start)
+      .justifyContent(FlexAlign.SpaceBetween)
       .alignItems(VerticalAlign.Center)
       .margin({ bottom: 20 })
 
