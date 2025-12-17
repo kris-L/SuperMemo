@@ -1,9 +1,5 @@
 {
   "src": [
-    "pages/Index",
-    "pages/MatchGameSelect",
-    "pages/MatchGame",
-    "pages/NumberMemorySelect",
-    "pages/NumberMemory"
+    "pages/Index"
   ]
 }
