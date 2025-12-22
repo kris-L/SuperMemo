@@ -1,7 +1,7 @@
 {
   "layered-image":
   {
-    "background" : "$media:ic_logo1",
-    "foreground" : "$media:ic_logo1"
+    "background" : "$media:ic_logo_back",
+    "foreground" : "$media:ic_logo_fore"
   }
 }

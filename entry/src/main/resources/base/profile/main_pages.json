@@ -22,6 +22,12 @@
     "pages/PointsRecord",
     "pages/TrainingRecord",
     "pages/GuideList",
-    "pages/GuideDetail"
+    "pages/GuideDetail",
+    "pages/ExamList",
+    "pages/NumberPegExam",
+    "pages/FlipCardSelect",
+    "pages/FlipCard",
+    "pages/RoutePalaceSelect",
+    "pages/RoutePalace"
   ]
 }

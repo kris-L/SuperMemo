@@ -124,15 +124,15 @@ struct MemoryPalaceBuilder {
         children: []
       };
 
-      // 计算分类颜色的中间值（用于所有桩）
-      const pegColor = this.getMiddleColor(categoryColor);
+      // 桩节点直接使用分类节点的颜色值
+      const pegColor = categoryColor;
       category.pegs.forEach((peg, pegIndex) => {
         const pegNode: TreeNode = {
           id: `peg_${categoryIndex}_${pegIndex}`,
           type: 'peg',
           name: peg,
           parentId: categoryNode.id,
-          color: pegColor, // 同一个分类的桩使用相同的中间值颜色
+          color: pegColor, // 同一个分类的桩使用相同的分类颜色
           children: []
         };
         categoryNode.children.push(pegNode);
@@ -300,7 +300,7 @@ struct MemoryPalaceBuilder {
       };
     } else if (parentNode.type === 'category') {
       // 在分类下添加桩
-      const pegColor = this.getMiddleColor(parentNode.color || '#F44336'); // 使用中间值颜色
+      const pegColor = parentNode.color || '#F44336'; // 直接使用分类节点的颜色
       newNode = {
         id: `peg_${Date.now()}`,
         type: 'peg',
@@ -465,6 +465,7 @@ struct MemoryPalaceBuilder {
             .textAlign(TextAlign.Center)
             .fontSize(20)
             .fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.text_primary'))
 
           Blank()
             .width(44)
@@ -584,16 +585,16 @@ struct MemoryPalaceBuilder {
         // 复位按钮
         Button() {
           Text('↺')
-            .fontSize(20)
+            .fontSize(18)
             .fontWeight(FontWeight.Bold)
             .fontColor(Color.White)
             .textAlign(TextAlign.Center)
         }
-        .width(48)
-        .height(48)
-        .borderRadius(24)
+        .width(40)
+        .height(40)
+        .borderRadius(20)
         .backgroundColor('#2196F3')
-        .margin({ bottom: 12 })
+        .margin({ bottom: 8 })
         .onClick(() => {
           this.onResetView();
         })
@@ -601,16 +602,16 @@ struct MemoryPalaceBuilder {
         // 放大按钮
         Button() {
           Text('+')
-            .fontSize(20)
+            .fontSize(18)
             .fontWeight(FontWeight.Bold)
             .fontColor(Color.White)
             .textAlign(TextAlign.Center)
         }
-        .width(48)
-        .height(48)
-        .borderRadius(24)
+        .width(40)
+        .height(40)
+        .borderRadius(20)
         .backgroundColor('#FF9800')
-        .margin({ bottom: 12 })
+        .margin({ bottom: 8 })
         .onClick(() => {
           this.scaleValue = Math.min(3.0, this.scaleValue + 0.2);
         })
@@ -618,22 +619,22 @@ struct MemoryPalaceBuilder {
         // 缩小按钮
         Button() {
           Text('−')
-            .fontSize(20)
+            .fontSize(18)
             .fontWeight(FontWeight.Bold)
             .fontColor(Color.White)
             .textAlign(TextAlign.Center)
         }
-        .width(48)
-        .height(48)
-        .borderRadius(24)
+        .width(40)
+        .height(40)
+        .borderRadius(20)
         .backgroundColor('#FF9800')
         .onClick(() => {
           this.scaleValue = Math.max(0.5, this.scaleValue - 0.2);
         })
       }
       .position({ x: '100%', y: '100%' })
-      .margin({ right: 16, bottom: 16 })
-      .translate({ x: -64, y: -200 })
+      .margin({ right: 8, bottom: 16 })
+      .translate({ x: -48, y: -200 })
       .zIndex(200)
       // 编辑对话框
       if (this.showEditDialog) {
@@ -693,28 +694,16 @@ struct MemoryPalaceBuilder {
           }
           .width(2)
           .backgroundColor('#999999')
-          .margin({ left: level === 0 ? 5 : 10, right: 10 }) // 宫殿到分类时，减少左边距
+          .margin({ left: level === 0 ? 5 : 5, right: 5 }) // 减少左右边距，更紧凑
 
           // 子节点（垂直排列，整体居中）
           Column() {
             ForEach(node.children, (child: TreeNode, childIndex: number) => {
-              Row() {
-                // 连接线（横线）- 只在非宫殿级别显示
-                if (level > 0) {
-                  Blank()
-                    .width(20)
-                    .height(2)
-                    .backgroundColor('#999999')
-                    .margin({ right: 10 })
-                }
-                
-                // 子节点
+              // 子节点（去掉横线，直接显示）
+              Column() {
                 this.buildTreeView(child, level + 1, childIndex)
               }
-              .width('100%')
-              .justifyContent(FlexAlign.Start)
-              .alignItems(VerticalAlign.Center)
-              .margin({ bottom: childIndex < node.children.length - 1 ? (level >= 1 ? 4 : 20) : 0 }) // 桩名之间间距8px，分类之间间距20px
+              .margin({ bottom: childIndex < node.children.length - 1 ? (level >= 1 ? 4 : 15) : 0 }) // 紧凑间距
             }, (child: TreeNode) => child.id)
           }
           .justifyContent(FlexAlign.Center)
@@ -727,7 +716,7 @@ struct MemoryPalaceBuilder {
     }
     .justifyContent(FlexAlign.Start)
     .alignItems(VerticalAlign.Center)
-    .margin({ right: 30 })
+    .margin({ right: 15 }) // 减少右边距，更紧凑
   }
 
   @Builder

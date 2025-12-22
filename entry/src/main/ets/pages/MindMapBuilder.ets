@@ -153,8 +153,8 @@ struct MindMapBuilder {
         children: []
       };
 
-      // 计算分类颜色的中间值（用于所有桩）
-      const pegColor = this.getMiddleColor(categoryColor);
+      // 桩节点直接使用分类节点的颜色值
+      const pegColor = categoryColor;
       category.pegs.forEach((peg, pegIndex) => {
         const pegNode: TreeNode = {
           id: `peg_${categoryIndex}_${pegIndex}`,
@@ -223,7 +223,7 @@ struct MindMapBuilder {
         children: []
       };
 
-      const pegColor = this.getMiddleColor(categoryColor);
+      const pegColor = categoryColor;
       category.pegs.forEach((peg, pegIndex) => {
         const pegNode: TreeNode = {
           id: `peg_${categoryIndex}_${pegIndex}`,
@@ -398,7 +398,7 @@ struct MindMapBuilder {
       };
     } else if (parentNode.type === 'category') {
       // 在分类下添加桩
-      const pegColor = this.getMiddleColor(parentNode.color || '#F44336');
+      const pegColor = parentNode.color || '#F44336'; // 直接使用分类节点的颜色
       newNode = {
         id: `peg_${Date.now()}`,
         type: 'peg',
@@ -596,6 +596,7 @@ struct MindMapBuilder {
             .textAlign(TextAlign.Center)
             .fontSize(20)
             .fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.text_primary'))
 
           Blank()
             .width(44)
@@ -869,6 +870,7 @@ struct MindMapBuilder {
         Text('编辑名称')
           .fontSize(18)
           .fontWeight(FontWeight.Bold)
+          .fontColor($r('app.color.text_primary'))
           .margin({ bottom: 16 })
 
         TextArea({ placeholder: '请输入名称', text: this.editText })
@@ -952,11 +954,12 @@ struct MindMapBuilder {
         Text('确认删除')
           .fontSize(18)
           .fontWeight(FontWeight.Bold)
+          .fontColor($r('app.color.text_primary'))
           .margin({ bottom: 8 })
 
         Text('确定要删除该节点吗？删除后无法恢复。')
           .fontSize(14)
-          .fontColor('#666666')
+          .fontColor($r('app.color.text_secondary'))
           .margin({ bottom: 20 })
           .textAlign(TextAlign.Center)
 

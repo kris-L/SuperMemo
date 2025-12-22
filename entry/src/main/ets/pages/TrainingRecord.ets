@@ -44,15 +44,19 @@ struct TrainingRecordPage {
   }
 
   /**
-   * 格式化时长为（+分钟.秒s）格式
-   * 例如：20秒 -> +0.20s, 80秒 -> +1.20s, 125秒 -> +2.05s
+   * 格式化时长为"X分Y秒"格式
+   * 例如：20秒 -> 20秒, 80秒 -> 1分20秒, 125秒 -> 2分5秒
    */
   private formatDuration(seconds: number): string {
+    if (seconds < 60) {
+      return `${seconds}秒`;
+    }
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    // 秒数需要格式化为两位数字，不足两位前面补0
-    const secsStr = String(secs).padStart(2, '0');
-    return `+${mins}.${secsStr}s`;
+    if (secs === 0) {
+      return `${mins}分钟`;
+    }
+    return `${mins}分${secs}秒`;
   }
 
   build() {
@@ -77,6 +81,7 @@ struct TrainingRecordPage {
           .textAlign(TextAlign.Center)
           .fontSize(20)
           .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
 
         Blank()
           .width(44)
@@ -105,7 +110,7 @@ struct TrainingRecordPage {
         Column() {
           Text('暂无训练记录')
             .fontSize(16)
-            .fontColor('#999999')
+            .fontColor($r('app.color.text_tertiary'))
         }
         .width('100%')
         .layoutWeight(1)
@@ -121,13 +126,13 @@ struct TrainingRecordPage {
                   Text(record.gameType)
                     .fontSize(16)
                     .fontWeight(FontWeight.Medium)
-                    .fontColor('#333333')
+                    .fontColor($r('app.color.text_primary'))
                     .margin({ bottom: 6 })
 
                   // 时间
                   Text(this.formatDateTime(record.createTime))
                     .fontSize(12)
-                    .fontColor('#999999')
+                    .fontColor($r('app.color.text_tertiary'))
                 }
                 .layoutWeight(1)
                 .alignItems(HorizontalAlign.Start)
@@ -136,7 +141,7 @@ struct TrainingRecordPage {
                   // 次数（最新的为第1次）
                   Text(`第${index + 1}次`)
                     .fontSize(14)
-                    .fontColor('#666666')
+                    .fontColor($r('app.color.text_secondary'))
                     .margin({ bottom: 4 })
 
                   // 时长

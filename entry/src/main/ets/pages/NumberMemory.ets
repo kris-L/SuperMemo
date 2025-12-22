@@ -460,6 +460,7 @@ struct NumberMemory {
           .textAlign(TextAlign.Center)
           .fontSize(20)
           .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
         Blank()
           .width(44)
           .height(44)
@@ -477,7 +478,7 @@ struct NumberMemory {
             Column() {
               Text('记忆时间')
                 .fontSize(12)
-                .fontColor('#666666')
+                .fontColor($r('app.color.text_secondary'))
               Text(this.formatTime(this.memoryTime))
                 .fontSize(16)
                 .fontWeight(FontWeight.Bold)
@@ -489,10 +490,10 @@ struct NumberMemory {
             Column() {
               Text('记忆时间')
                 .fontSize(12)
-                .fontColor('#666666')
+                .fontColor($r('app.color.text_secondary'))
               Text(this.formatTime(this.memoryTime))
                 .fontSize(14)
-                .fontColor('#666666')
+                .fontColor($r('app.color.text_secondary'))
                 .margin({ top: 2 })
             }
             .flexGrow(1)
@@ -500,7 +501,7 @@ struct NumberMemory {
             Column() {
               Text('回忆时间')
                 .fontSize(12)
-                .fontColor('#666666')
+                .fontColor($r('app.color.text_secondary'))
               Text(this.formatTime(this.recallTime))
                 .fontSize(16)
                 .fontWeight(FontWeight.Bold)
@@ -512,7 +513,7 @@ struct NumberMemory {
             Column() {
               Text('总时间')
                 .fontSize(12)
-                .fontColor('#666666')
+                .fontColor($r('app.color.text_secondary'))
               Text(this.formatTime(this.totalTime))
                 .fontSize(16)
                 .fontWeight(FontWeight.Bold)
@@ -538,7 +539,7 @@ struct NumberMemory {
               Text(`${row.rowIndex}：`)
                 .fontSize(18)
                 .fontWeight(FontWeight.Bold)
-                .fontColor('#333333')
+                .fontColor($r('app.color.text_primary'))
                 .width(60)
               
               // 数字显示
@@ -553,7 +554,7 @@ struct NumberMemory {
                 // 记忆阶段：显示原始数字
                 Text(row.originalDigits)
                   .fontSize(36)
-                  .fontColor('#333333')
+                  .fontColor($r('app.color.text_primary'))
                   .fontWeight(FontWeight.Bold)
                   .letterSpacing(2)
               }
@@ -811,11 +812,12 @@ struct NumberMemory {
               Text('复盘')
                 .fontSize(24)
                 .fontWeight(FontWeight.Bold)
+                .fontColor($r('app.color.text_primary'))
                 .flexGrow(1)
               
               Text('✕')
                 .fontSize(28)
-                .fontColor('#666666')
+                .fontColor($r('app.color.text_secondary'))
                 .fontWeight(FontWeight.Bold)
                 .onClick(() => {
                   this.closeReview();
@@ -833,7 +835,7 @@ struct NumberMemory {
                     Text(`${row.rowIndex}：`)
                       .fontSize(16)
                       .fontWeight(FontWeight.Bold)
-                      .fontColor('#666666')
+                      .fontColor($r('app.color.text_secondary'))
                       .alignSelf(ItemAlign.Start)
                       .margin({ bottom: 8 })
                     
@@ -867,7 +869,7 @@ struct NumberMemory {
                                 // 未输入的位置显示正确答案
                                 Text(`(${row.originalDigits[index]})`)
                                   .fontSize(20)
-                                  .fontColor('#999999')
+                                  .fontColor($r('app.color.text_tertiary'))
                                   .fontWeight(FontWeight.Medium)
                                   .margin({ left: 2 })
                               }
@@ -895,6 +897,7 @@ struct NumberMemory {
             }
             .layoutWeight(1)
             .scrollBar(BarState.Auto)
+            .edgeEffect(EdgeEffect.Spring)
             
             // 底部按钮
             Button('返回')
@@ -903,13 +906,13 @@ struct NumberMemory {
               .fontSize(18)
               .fontWeight(FontWeight.Medium)
               .backgroundColor('#2196F3')
-              .margin({ top: 20 })
+              .margin({ top: 20, bottom: 10 })
               .onClick(() => {
                 this.closeReview();
               })
           }
           .width('90%')
-          .height('85%')
+          .height('90%')
           .padding(25)
           .backgroundColor(Color.White)
           .borderRadius(12)

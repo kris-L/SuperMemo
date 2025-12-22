@@ -276,10 +276,10 @@ struct SelectNumber {
 
   gotoNext() {
     //测试用的
-    // if (this.currentIndex + 1 == 10) {
-    //    this.finishGame();
-    //    return;
-    // }
+    if (this.currentIndex + 1 == 10) {
+       this.finishGame();
+       return;
+    }
     if (this.currentIndex + 1 >= this.questionOrder.length) {
       this.finishGame();
       return;

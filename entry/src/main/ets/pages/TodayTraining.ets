@@ -41,6 +41,8 @@ struct TodayTrain {
   private allPegs: NumberPeg[] = []; // 所有数字桩数据
   private todayKey: number = 0; // 例如 20250101
   private dbManager: DatabaseManager = DatabaseManager.getInstance();
+  private startTime: number = 0; // 训练开始时间戳（毫秒）
+  private isTimerRunning: boolean = false; // 计时器是否正在运行
 
   aboutToAppear() {
     // 仅使用 110 数字桩，matchType 根据轮次自动切换
@@ -50,10 +52,17 @@ struct TodayTrain {
   }
 
   aboutToDisappear() {
-    // 清理定时器
+    // 停止计时器
     if (this.timer !== null) {
       clearInterval(this.timer);
       this.timer = null;
+      this.isTimerRunning = false;
+    }
+    
+    // 保存当前训练时间（已用时间和离开时间戳）
+    // 如果训练未完成，保存已用时间和离开时间戳，以便下次继续
+    if (!this.isGameOver && this.completedRounds < this.totalRounds) {
+      this.saveTrainingTime();
     }
   }
 
@@ -72,6 +81,27 @@ struct TodayTrain {
         return;
       }
 
+      // 恢复训练时间
+      const now = Date.now();
+      if (progress.elapsedTime !== undefined && progress.elapsedTime > 0) {
+        // 从保存的已用时间继续计时（不累加离开期间的时间）
+        this.elapsedTime = progress.elapsedTime;
+        // 记录当前时间作为新的开始时间（用于下次离开时保存）
+        this.startTime = now;
+        console.info(`恢复训练时间: elapsedTime=${this.elapsedTime}, startTime=${this.startTime}`);
+      } else {
+        // 首次开始训练，记录开始时间
+        this.startTime = now;
+        this.elapsedTime = 0;
+        await this.dbManager.saveTrainingTime(this.todayKey, this.startTime, 0);
+        console.info(`首次开始训练: startTime=${this.startTime}, elapsedTime=0`);
+      }
+
+      // 确保计时器启动（如果训练未完成）
+      if (!this.isGameOver && !this.isTimerRunning) {
+        this.startTimer();
+      }
+
       await this.initGame();
     } catch (err) {
       console.error('初始化今日训练进度失败:', err);
@@ -86,14 +116,6 @@ struct TodayTrain {
     try {
       const service = NumberPegService.getInstance();
       this.allPegs = await service.getAllNumberPegs();
-
-      // 只在首次进入今日训练时重置计时
-      if (this.completedRounds === 0 && this.usedPegNumbers.size === 0) {
-        this.elapsedTime = 0;
-        this.correctCount = 0;
-        this.errorCount = 0;
-        this.startTimer();
-      }
 
       // 根据轮次设置匹配类型
       this.setupMatchTypes();
@@ -204,9 +226,31 @@ struct TodayTrain {
    * 开始计时
    */
   startTimer() {
+    // 如果计时器已在运行，先停止
+    if (this.timer !== null) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+    this.isTimerRunning = true;
     this.timer = setInterval(() => {
       this.elapsedTime++;
     }, 1000);
+    console.info('计时器已启动');
+  }
+
+  /**
+   * 保存训练时间到数据库
+   * 保存已用时间和离开时间戳，以便下次进入时从保存的时间继续计时
+   */
+  async saveTrainingTime() {
+    try {
+      // 保存已用时间和离开时间戳（作为startTime，下次进入时用于恢复）
+      const leaveTime = Date.now();
+      await this.dbManager.saveTrainingTime(this.todayKey, leaveTime, this.elapsedTime);
+      console.info(`保存训练时间: elapsedTime=${this.elapsedTime}秒, leaveTime=${leaveTime}`);
+    } catch (err) {
+      console.error('保存训练时间失败:', err);
+    }
   }
 
   /**
@@ -348,9 +392,11 @@ struct TodayTrain {
         this.isRoundComplete = true;
         this.completedRounds++;
 
-        // 更新数据库中的今日训练进度
+        // 更新数据库中的今日训练进度（同时保存时间）
         try {
-          await this.dbManager.updateDailyTrainingProgress(this.todayKey, this.completedRounds, this.totalRounds);
+          await this.dbManager.updateDailyTrainingProgress(this.todayKey, this.completedRounds, this.totalRounds, 0, this.elapsedTime);
+          // 同时保存训练时间，以便中途离开时能正确恢复
+          await this.dbManager.saveTrainingTime(this.todayKey, Date.now(), this.elapsedTime);
         } catch (err) {
           console.error('更新今日训练进度失败:', err);
         }
@@ -360,9 +406,22 @@ struct TodayTrain {
           if (this.timer !== null) {
             clearInterval(this.timer);
             this.timer = null;
+            this.isTimerRunning = false;
           }
+          
+          // 保存训练记录（包含总计时）
+          await this.saveTrainingRecord();
+          
           // 完成今日训练，奖励积分
           await this.rewardPointsForTodayTraining();
+          
+          // 清除训练时间记录（已完成）
+          try {
+            await this.dbManager.saveTrainingTime(this.todayKey, 0, 0);
+          } catch (err) {
+            console.error('清除训练时间失败:', err);
+          }
+          
           promptAction.showToast({ message: '今日训练已全部完成！获得20积分！', duration: 2000 });
         } else {
           // 进入下一轮
@@ -377,6 +436,22 @@ struct TodayTrain {
 
     // 清空选中列表
     this.selectedCards = [];
+  }
+
+  /**
+   * 保存训练记录
+   */
+  private async saveTrainingRecord() {
+    try {
+      await this.dbManager.insertTrainingRecord({
+        gameType: '今日训练',
+        duration: this.elapsedTime,
+        createTime: Date.now()
+      });
+      console.info(`保存训练记录: 今日训练, 时长=${this.elapsedTime}秒`);
+    } catch (err) {
+      console.error('保存训练记录失败:', err);
+    }
   }
 
   /**
@@ -457,7 +532,7 @@ struct TodayTrain {
 
   build() {
     Column() {
-      // 顶部栏 + 统计
+      // 顶部栏 + 统计（固定，不滚动）
       Column() {
         Row() {
           Button() {
@@ -477,6 +552,7 @@ struct TodayTrain {
             .textAlign(TextAlign.Center)
             .fontSize(20)
             .fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.text_primary'))
 
           Blank()
             .width(44)
@@ -492,10 +568,11 @@ struct TodayTrain {
           Column() {
             Text('时间')
               .fontSize(12)
-              .fontColor('#666666')
+              .fontColor($r('app.color.text_secondary'))
             Text(this.formatTime(this.elapsedTime))
               .fontSize(16)
               .fontWeight(FontWeight.Bold)
+              .fontColor($r('app.color.text_primary'))
               .margin({ top: 5 })
           }
           .flexGrow(1)
@@ -503,7 +580,7 @@ struct TodayTrain {
           Column() {
             Text('正确')
               .fontSize(12)
-              .fontColor('#666666')
+              .fontColor($r('app.color.text_secondary'))
             Text(this.correctCount.toString())
               .fontSize(16)
               .fontWeight(FontWeight.Bold)
@@ -515,7 +592,7 @@ struct TodayTrain {
           Column() {
             Text('错误')
               .fontSize(12)
-              .fontColor('#666666')
+              .fontColor($r('app.color.text_secondary'))
             Text(this.errorCount.toString())
               .fontSize(16)
               .fontWeight(FontWeight.Bold)
@@ -531,29 +608,40 @@ struct TodayTrain {
         .justifyContent(FlexAlign.SpaceAround)
       }
 
-      // 游戏区域
-      Grid() {
-        ForEach(this.cards, (card: GameCard) => {
-          GridItem() {
-            this.createCard(card, card.isSelected);
+      // 可滚动内容区域
+      Scroll() {
+        Column() {
+          // 游戏区域
+          Grid() {
+            ForEach(this.cards, (card: GameCard) => {
+              GridItem() {
+                this.createCard(card, card.isSelected);
+              }
+            })
           }
-        })
-      }
-      .columnsTemplate('1fr 1fr 1fr')
-      .rowsTemplate('1fr 1fr 1fr 1fr')
-      .columnsGap(10)
-      .rowsGap(10)
-      .width('95%')
-      .height('70%')
-      .margin({ top: 20 })
+          .columnsTemplate('1fr 1fr 1fr')
+          .rowsTemplate('1fr 1fr 1fr 1fr')
+          .columnsGap(10)
+          .rowsGap(10)
+          .width('95%')
+          .height(400)
+          .margin({ top: 20 })
 
-      // 今日训练轮次进度提示（10 轮制）
-      if (!this.isGameOver) {
-        Text(`今日训练进度：${this.completedRounds}/${this.totalRounds}`)
-          .fontSize(14)
-          .fontColor('#666666')
-          .margin({ top: 10 })
+          // 今日训练轮次进度提示（10 轮制）
+          if (!this.isGameOver) {
+            Text(`今日训练进度：${this.completedRounds}/${this.totalRounds}`)
+              .fontSize(14)
+              .fontColor($r('app.color.text_secondary'))
+              .margin({ top: 10, bottom: 20 })
+          }
+        }
+        .width('100%')
+        .alignItems(HorizontalAlign.Center)
       }
+      .width('100%')
+      .layoutWeight(1)
+      .scrollBar(BarState.Auto)
+      .edgeEffect(EdgeEffect.Spring)
 
       // 游戏结束提示（居中显示）
       if (this.isGameOver) {
@@ -566,49 +654,66 @@ struct TodayTrain {
             
             Text(this.getGameOverMessage())
               .fontSize(16)
-              .fontColor('#666666')
+              .fontColor($r('app.color.text_secondary'))
               .margin({ bottom: 20 })
             
             Text(`总用时: ${this.formatTime(this.elapsedTime)}`)
               .fontSize(18)
+              .fontColor($r('app.color.text_primary'))
               .margin({ bottom: 10 })
             
             Text(`正确: ${this.correctCount} 次`)
               .fontSize(18)
+              .fontColor($r('app.color.text_primary'))
               .margin({ bottom: 10 })
             
             Text(`错误: ${this.errorCount} 次`)
               .fontSize(18)
+              .fontColor($r('app.color.text_primary'))
               .margin({ bottom: 30 })
             
-            Row() {
-              Button('再来一局')
-                .width('40%')
-                .height(45)
-                .backgroundColor('#2196F3')
-                .onClick(() => {
-                  if (this.dataType === '110数字桩') {
-                    this.usedPegNumbers.clear();
-                  }
-                  this.usedPegCount = 0;
-                  this.elapsedTime = 0;
-                  this.correctCount = 0;
-                  this.errorCount = 0;
-                  this.isGameOver = false;
-                  this.initGame();
-                })
-              
+            // 如果完成了10次，只显示返回按钮；否则显示再来一局和返回按钮
+            if (this.completedRounds >= this.totalRounds) {
+              // 完成今日训练，只显示返回按钮
               Button('返回')
-                .width('40%')
+                .width('60%')
                 .height(45)
                 .backgroundColor('#9E9E9E')
                 .onClick(() => {
                   // 直接返回到上一个页面（首页的每日训练页）
                   router.back();
                 })
+            } else {
+              // 未完成今日训练，显示再来一局和返回按钮
+              Row() {
+                Button('再来一局')
+                  .width('40%')
+                  .height(45)
+                  .backgroundColor('#2196F3')
+                  .onClick(() => {
+                    if (this.dataType === '110数字桩') {
+                      this.usedPegNumbers.clear();
+                    }
+                    this.usedPegCount = 0;
+                    this.elapsedTime = 0;
+                    this.correctCount = 0;
+                    this.errorCount = 0;
+                    this.isGameOver = false;
+                    this.initGame();
+                  })
+                
+                Button('返回')
+                  .width('40%')
+                  .height(45)
+                  .backgroundColor('#9E9E9E')
+                  .onClick(() => {
+                    // 直接返回到上一个页面（首页的每日训练页）
+                    router.back();
+                  })
+              }
+              .width('100%')
+              .justifyContent(FlexAlign.SpaceAround)
             }
-            .width('100%')
-            .justifyContent(FlexAlign.SpaceAround)
           }
           .width('80%')
           .padding(20)
@@ -625,7 +730,7 @@ struct TodayTrain {
     }
     .width('100%')
     .height('100%')
-    .justifyContent(FlexAlign.Start)
+    .justifyContent(FlexAlign.Center)
     .padding({ top: 20 })
     .backgroundColor('#F5F5F5')
   }
@@ -649,13 +754,13 @@ struct TodayTrain {
               Text(card.peg.number.toString())
                 .fontSize(36)
                 .fontWeight(FontWeight.Bold)
-                .fontColor('#333333')
+                .fontColor($r('app.color.text_primary'))
             } else if (card.displayType === '桩名称') {
               // 显示编码（桩名称）
               Text(card.peg.code)
                 .fontSize(22)
                 .fontWeight(FontWeight.Medium)
-                .fontColor('#333333')
+                .fontColor($r('app.color.text_primary'))
             } else if (card.displayType === '桩图像') {
               // 显示图片，填满整个卡片
               Image($r(`app.media.${card.peg.imageName.replace('.jpg', '')}`))

@@ -630,6 +630,7 @@ struct MatchGame {
             .textAlign(TextAlign.Center)
             .fontSize(20)
             .fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.text_primary'))
 
           Blank()
             .width(44)
@@ -645,10 +646,11 @@ struct MatchGame {
           Column() {
             Text('时间')
               .fontSize(12)
-              .fontColor('#666666')
+              .fontColor($r('app.color.text_secondary'))
             Text(this.formatTime(this.elapsedTime))
               .fontSize(16)
               .fontWeight(FontWeight.Bold)
+              .fontColor($r('app.color.text_primary'))
               .margin({ top: 5 })
           }
           .flexGrow(1)
@@ -656,7 +658,7 @@ struct MatchGame {
           Column() {
             Text('正确')
               .fontSize(12)
-              .fontColor('#666666')
+              .fontColor($r('app.color.text_secondary'))
             Text(this.correctCount.toString())
               .fontSize(16)
               .fontWeight(FontWeight.Bold)
@@ -668,7 +670,7 @@ struct MatchGame {
           Column() {
             Text('错误')
               .fontSize(12)
-              .fontColor('#666666')
+              .fontColor($r('app.color.text_secondary'))
             Text(this.errorCount.toString())
               .fontSize(16)
               .fontWeight(FontWeight.Bold)
@@ -704,7 +706,7 @@ struct MatchGame {
       if (!this.isGameOver) {
         Text(`进度: ${this.usedPegCount}/${this.getTotalCount()}`)
           .fontSize(14)
-          .fontColor('#666666')
+          .fontColor($r('app.color.text_secondary'))
           .margin({ top: 10 })
       }
 
@@ -715,23 +717,27 @@ struct MatchGame {
             Text('恭喜完成！')
               .fontSize(24)
               .fontWeight(FontWeight.Bold)
+              .fontColor($r('app.color.text_primary'))
               .margin({ bottom: 20 })
             
             Text(this.getGameOverMessage())
               .fontSize(16)
-              .fontColor('#666666')
+              .fontColor($r('app.color.text_secondary'))
               .margin({ bottom: 20 })
             
             Text(`总用时: ${this.formatTime(this.elapsedTime)}`)
               .fontSize(18)
+              .fontColor($r('app.color.text_primary'))
               .margin({ bottom: 10 })
             
             Text(`正确: ${this.correctCount} 次`)
               .fontSize(18)
+              .fontColor($r('app.color.text_primary'))
               .margin({ bottom: 10 })
             
             Text(`错误: ${this.errorCount} 次`)
               .fontSize(18)
+              .fontColor($r('app.color.text_primary'))
               .margin({ bottom: 30 })
             
             Row() {

@@ -50,6 +50,7 @@ struct MemoryPalacePracticeSelect {
           .textAlign(TextAlign.Center)
           .fontSize(20)
           .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
 
         Blank()
           .width(44)
@@ -67,7 +68,7 @@ struct MemoryPalacePracticeSelect {
         Column() {
           Text('暂无记忆宫殿')
             .fontSize(16)
-            .fontColor('#999999')
+            .fontColor($r('app.color.text_tertiary'))
         }
         .width('100%')
         .layoutWeight(1)
@@ -108,7 +109,7 @@ struct MemoryPalacePracticeSelect {
       Text(palace.name)
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#333333')
+        .fontColor($r('app.color.text_primary'))
         .maxLines(2)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .textAlign(TextAlign.Center)

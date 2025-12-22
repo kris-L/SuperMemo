@@ -41,6 +41,7 @@ struct MatchGameSelect {
           .textAlign(TextAlign.Center)
           .fontSize(20)
           .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
 
         Blank()
           .width(44)
@@ -51,13 +52,14 @@ struct MatchGameSelect {
       .padding({ left: 12, right: 12 })
       .justifyContent(FlexAlign.Start)
       .alignItems(VerticalAlign.Center)
-      .margin({ bottom: 10 })
+      .margin({ bottom: 8 })
 
       // 选择数据类型
       Text('选择数据类型：')
         .fontSize(18)
         .fontWeight(FontWeight.Medium)
-        .margin({ bottom: 15 })
+        .fontColor($r('app.color.text_primary'))
+        .margin({ bottom: 10 })
         .alignSelf(ItemAlign.Start)
         .margin({ left: 20 })
 
@@ -90,10 +92,11 @@ struct MatchGameSelect {
               })
             Text(item)
               .fontSize(16)
+              .fontColor($r('app.color.text_primary'))
               .margin({ left: 10 })
           }
           .width('100%')
-          .height(50)
+          .height(42)
           .justifyContent(FlexAlign.Start)
           .padding({ left: 20 })
         })
@@ -101,15 +104,16 @@ struct MatchGameSelect {
       .width('90%')
       .backgroundColor(Color.White)
       .borderRadius(8)
-      .padding({ top: 10, bottom: 10 })
-      .margin({ bottom: 30 })
+      .padding({ top: 8, bottom: 8 })
+      .margin({ bottom: 16 })
 
       // 选择配对数据类型（110数字桩和34省显示）
       if (this.selectedDataType === '110数字桩' || this.selectedDataType === '34省') {
         Text('选择配对数据：')
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
-          .margin({ bottom: 15 })
+          .fontColor($r('app.color.text_primary'))
+          .margin({ bottom: 10 })
           .alignSelf(ItemAlign.Start)
           .margin({ left: 20 })
 
@@ -166,6 +170,7 @@ struct MatchGameSelect {
                 })
               Text(item)
                 .fontSize(16)
+                .fontColor($r('app.color.text_primary'))
                 .margin({ left: 10 })
               
               // 显示选中状态提示
@@ -177,7 +182,7 @@ struct MatchGameSelect {
               }
             }
             .width('100%')
-            .height(50)
+            .height(42)
             .justifyContent(FlexAlign.Start)
             .padding({ left: 20 })
           })
@@ -185,33 +190,27 @@ struct MatchGameSelect {
         .width('90%')
         .backgroundColor(Color.White)
         .borderRadius(8)
-        .padding({ top: 10, bottom: 10 })
-        .margin({ bottom: 30 })
-      } else {
-        // 其他数据类型提示
-        Text('该数据类型功能开发中...')
-          .fontSize(16)
-          .fontColor('#999999')
-          .margin({ bottom: 30 })
+        .padding({ top: 8, bottom: 8 })
+        .margin({ bottom: 16 })
       }
 
       // 提示信息
       if (this.selectedDataType === '110数字桩' || this.selectedDataType === '34省') {
         Text(`已选择配对类型：${this.selectedMatchTypes.join(' ↔ ')}`)
           .fontSize(14)
-          .fontColor('#666666')
-          .margin({ bottom: 10 })
+          .fontColor($r('app.color.text_secondary'))
+          .margin({ bottom: 8 })
       } else if (this.selectedDataType === '36计' || this.selectedDataType === '三字经') {
         Text(`配对类型：${this.selectedMatchTypes.join(' ↔ ')}`)
           .fontSize(14)
-          .fontColor('#666666')
-          .margin({ bottom: 10 })
+          .fontColor($r('app.color.text_secondary'))
+          .margin({ bottom: 8 })
       }
 
       // 开始按钮
       Button('开始游戏')
         .width('80%')
-        .height(50)
+        .height(45)
         .fontSize(18)
         .fontWeight(FontWeight.Medium)
         .backgroundColor('#2196F3')
@@ -254,21 +253,11 @@ struct MatchGameSelect {
           });
         })
         .margin({ bottom: 20 })
-
-      // 返回按钮
-      Button('返回')
-        .width('80%')
-        .height(50)
-        .fontSize(18)
-        .backgroundColor('#9E9E9E')
-        .onClick(() => {
-          router.back();
-        })
     }
     .width('100%')
     .height('100%')
     .justifyContent(FlexAlign.Start)
-    .padding({ top: 20 })
+    .padding({ top: 16 })
     .backgroundColor('#F5F5F5')
   }
 }

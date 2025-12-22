@@ -45,7 +45,7 @@ export struct Home {
           Text('每日训练')
         .fontSize(24)
         .fontWeight(FontWeight.Bold)
-            .fontColor('#333333')
+            .fontColor($r('app.color.text_primary'))
             .margin({ top: 20, bottom: 20 })
             .padding({ left: 20, right: 20 })
             .width('100%')
@@ -103,6 +103,32 @@ export struct Home {
                 }
               )
             }
+
+        // 翻翻看
+        GridItem() {
+              this.buildFeatureCard(
+                $r('app.media.ic_link_game'),
+                '翻翻看',
+                '翻转卡片配对记忆，提升记忆能力',
+                false,
+                () => {
+                  router.pushUrl({ url: 'pages/FlipCardSelect' });
+                }
+              )
+            }
+
+        // 路线宫殿
+        GridItem() {
+              this.buildFeatureCard(
+                $r('app.media.ic_route'),
+                '路线宫殿',
+                '通过路线记忆，构建记忆宫殿',
+                false,
+                () => {
+                  router.pushUrl({ url: 'pages/RoutePalaceSelect' });
+                }
+              )
+            }
           }
           .columnsTemplate('1fr 1fr')
           .columnsGap(12)
@@ -144,6 +170,13 @@ export struct Home {
             Text(`${this.todayCompletedRounds} / ${this.todayTotalRounds}`)
               .fontSize(16)
               .fontColor('#FFFFFF')
+              .margin({ bottom: 8 })
+
+            // 训练说明
+            Text('需要完成10个轮次的数字桩记忆，才算做一次完整训练，并获取的20积分，未完成不计分和不计时。当天保存进度。')
+              .fontSize(12)
+              .fontColor('#E3F2FF')
+              .textAlign(TextAlign.Center)
               .margin({ bottom: 12 })
 
             // 开始训练按钮（后续实现具体逻辑）
@@ -165,6 +198,40 @@ export struct Home {
           .shadow({ radius: 6, color: '#1F000000', offsetX: 0, offsetY: 2 })
           .margin({ left: 16, right: 16, bottom: 16 })
 
+          // 通关考试卡片
+          // Row() {
+          //   // 左侧图标
+          //   Image($r('app.media.ic_poker'))
+          //     .width(48)
+          //     .height(48)
+          //     .margin({ right: 12 })
+          //
+          //   // 右侧文字
+          //   Column() {
+          //     Text('通关考试')
+          //       .fontSize(18)
+          //       .fontWeight(FontWeight.Medium)
+          //       .fontColor($r('app.color.text_primary'))
+          //       .margin({ bottom: 4 })
+          //
+          //     Text('挑战各类记忆考试，检验你的记忆能力')
+          //       .fontSize(14)
+          //       .fontColor($r('app.color.text_secondary'))
+          //       .maxLines(2)
+          //       .textOverflow({ overflow: TextOverflow.Ellipsis })
+          //   }
+          //   .layoutWeight(1)
+          //   .alignItems(HorizontalAlign.Start)
+          // }
+          // .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+          // .backgroundColor(Color.White)
+          // .borderRadius(12)
+          // .shadow({ radius: 6, color: '#1F000000', offsetX: 0, offsetY: 2 })
+          // .margin({ left: 16, right: 16, bottom: 16 })
+          // .onClick(() => {
+          //   router.pushUrl({ url: 'pages/ExamList' });
+          // })
+
           // 扑克记忆卡片
           Row() {
             // 左侧图标
@@ -178,12 +245,12 @@ export struct Home {
               Text('扑克记忆')
                 .fontSize(18)
                 .fontWeight(FontWeight.Medium)
-                .fontColor('#333333')
+                .fontColor($r('app.color.text_primary'))
                 .margin({ bottom: 4 })
 
               Text('通过快速记忆整副扑克牌，挑战极限记忆力')
                 .fontSize(14)
-                .fontColor('#666666')
+                .fontColor($r('app.color.text_secondary'))
                 .maxLines(2)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
             }
@@ -235,7 +302,7 @@ export struct Home {
       Text(title)
         .fontSize(16)
         .fontWeight(FontWeight.Medium)
-        .fontColor(isPrimary ? Color.White : '#333333')
+        .fontColor(isPrimary ? Color.White : $r('app.color.text_primary'))
         .margin({ bottom: 4 })
 
       // 功能说明

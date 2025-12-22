@@ -43,6 +43,7 @@ struct NumberMemorySelect {
           .textAlign(TextAlign.Center)
           .fontSize(20)
           .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
 
         Blank()
           .width(44)
@@ -59,6 +60,7 @@ struct NumberMemorySelect {
       Text('设置范围：')
         .fontSize(18)
         .fontWeight(FontWeight.Medium)
+        .fontColor($r('app.color.text_primary'))
         .margin({ bottom: 15 })
         .alignSelf(ItemAlign.Start)
         .margin({ left: 20 })
@@ -82,6 +84,7 @@ struct NumberMemorySelect {
               })
             Text(item)
               .fontSize(16)
+              .fontColor($r('app.color.text_primary'))
               .margin({ left: 10 })
           }
           .width('100%')
@@ -102,6 +105,7 @@ struct NumberMemorySelect {
         Row() {
           Text('设置行数：')
             .fontSize(16)
+            .fontColor($r('app.color.text_primary'))
             .width('30%')
           TextInput({ placeholder: '1-1000', text: this.rowCountText })
             .type(InputType.Number)
@@ -122,7 +126,7 @@ struct NumberMemorySelect {
             })
           Text('范围: 1-1000')
             .fontSize(14)
-            .fontColor('#666666')
+            .fontColor($r('app.color.text_secondary'))
             .width('30%')
         }
         .width('90%')
@@ -136,6 +140,7 @@ struct NumberMemorySelect {
         Row() {
           Text('每行个数：')
             .fontSize(16)
+            .fontColor($r('app.color.text_primary'))
             .width('30%')
           TextInput({ placeholder: '1-10', text: this.digitsPerRowText })
             .type(InputType.Number)
@@ -170,6 +175,7 @@ struct NumberMemorySelect {
         Row() {
           Text('训练次数：')
             .fontSize(16)
+            .fontColor($r('app.color.text_primary'))
             .width('30%')
           TextInput({ placeholder: '1-1000', text: this.trainingCountText })
             .type(InputType.Number)
@@ -190,7 +196,7 @@ struct NumberMemorySelect {
             })
           Text('范围: 1-1000')
             .fontSize(14)
-            .fontColor('#666666')
+            .fontColor($r('app.color.text_secondary'))
             .width('30%')
         }
         .width('90%')
@@ -204,6 +210,7 @@ struct NumberMemorySelect {
         Row() {
           Text('开始位数：')
             .fontSize(16)
+            .fontColor($r('app.color.text_primary'))
             .width('30%')
           TextInput({ placeholder: '1-10000', text: this.piStartDigitText })
             .type(InputType.Number)
@@ -243,6 +250,7 @@ struct NumberMemorySelect {
         Row() {
           Text('结束位数：')
             .fontSize(16)
+            .fontColor($r('app.color.text_primary'))
             .width('30%')
           TextInput({ placeholder: '1-10000', text: this.piEndDigitText })
             .type(InputType.Number)
@@ -282,14 +290,15 @@ struct NumberMemorySelect {
         Row() {
           Text('每行个数：')
             .fontSize(16)
+            .fontColor($r('app.color.text_primary'))
             .width('30%')
           Text('10')
             .fontSize(16)
-            .fontColor('#333333')
+            .fontColor($r('app.color.text_primary'))
             .width('40%')
           Text('固定')
             .fontSize(14)
-            .fontColor('#666666')
+            .fontColor($r('app.color.text_secondary'))
             .width('30%')
         }
         .width('90%')
@@ -303,14 +312,15 @@ struct NumberMemorySelect {
         Row() {
           Text('训练次数：')
             .fontSize(16)
+            .fontColor($r('app.color.text_primary'))
             .width('30%')
           Text('1')
             .fontSize(16)
-            .fontColor('#333333')
+            .fontColor($r('app.color.text_primary'))
             .width('40%')
           Text('固定')
             .fontSize(14)
-            .fontColor('#666666')
+            .fontColor($r('app.color.text_secondary'))
             .width('30%')
         }
         .width('90%')

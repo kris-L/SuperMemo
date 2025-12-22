@@ -49,6 +49,7 @@ struct GuideListPage {
           .textAlign(TextAlign.Center)
           .fontSize(20)
           .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
 
         Blank()
           .width(44)
@@ -78,7 +79,7 @@ struct GuideListPage {
               // 标题
               Text(item.title)
                 .fontSize(16)
-                .fontColor('#333333')
+                .fontColor($r('app.color.text_primary'))
                 .layoutWeight(1)
                 .maxLines(2)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })

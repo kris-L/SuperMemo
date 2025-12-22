@@ -57,15 +57,22 @@ export struct MyPage {
   }
 
   /**
-   * 格式化训练时长显示（保留2位小数）
+   * 格式化训练时长显示为"X分Y秒"格式
+   * 输入参数是分钟数（小数），需要转换为秒数再格式化
    */
   private formatDuration(minutes: number): string {
-    // 如果小于0.01，显示0.00
-    if (minutes < 0.01) {
-      return '0.00';
+    // 将分钟转换为秒（四舍五入到整数）
+    const totalSeconds = Math.round(minutes * 60);
+    
+    if (totalSeconds < 60) {
+      return `${totalSeconds}秒`;
     }
-    // 保留2位小数
-    return minutes.toFixed(2);
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    if (secs === 0) {
+      return `${mins}分钟`;
+    }
+    return `${mins}分${secs}秒`;
   }
 
   /**
@@ -159,33 +166,43 @@ export struct MyPage {
   }
 
   build() {
-    Column() {
-      // 顶部栏
-      Row() {
-        Blank()
-          .width(44)
-          .height(44)
+    Stack() {
+      // 背景图片
+      Image($r('app.media.bg_my_page'))
+        .width('100%')
+        .height('100%')
+        .objectFit(ImageFit.Cover)
+        .position({ x: 0, y: 0 })
 
-        Text('我的')
-          .layoutWeight(1)
-          .textAlign(TextAlign.Center)
-          .fontSize(20)
-          .fontWeight(FontWeight.Medium)
+      // 主内容
+      Column() {
+        // 顶部栏
+        Row() {
+          Blank()
+            .width(44)
+            .height(44)
 
-        Blank()
-          .width(44)
-          .height(44)
-      }
-      .width('100%')
-      .height(56)
-      .padding({ left: 12, right: 12 })
-      .justifyContent(FlexAlign.SpaceBetween)
-      .alignItems(VerticalAlign.Center)
-      .margin({ bottom: 20 })
+          Text('我的')
+            .layoutWeight(1)
+            .textAlign(TextAlign.Center)
+            .fontSize(20)
+            .fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.text_primary'))
 
-      // 内容区域
-      Scroll() {
-        Column() {
+          Blank()
+            .width(44)
+            .height(44)
+        }
+        .width('100%')
+        .height(56)
+        .padding({ left: 12, right: 12 })
+        .justifyContent(FlexAlign.SpaceBetween)
+        .alignItems(VerticalAlign.Center)
+        .margin({ bottom: 20 })
+
+        // 内容区域
+        Scroll() {
+          Column() {
           // 用户信息卡片
           Row() {
             // 头像
@@ -209,14 +226,14 @@ export struct MyPage {
               Text(this.username || '最强大脑')
                 .fontSize(20)
                 .fontWeight(FontWeight.Bold)
-                .fontColor('#333333')
+                .fontColor($r('app.color.text_primary'))
                 .maxLines(1)
                 .textOverflow({ overflow: TextOverflow.Ellipsis })
                 .margin({ bottom: 6 })
 
               Text('坚持训练，打造你的最强大脑')
                 .fontSize(12)
-                .fontColor('#999999')
+                .fontColor($r('app.color.text_tertiary'))
             }
             .layoutWeight(1)
             .alignItems(HorizontalAlign.Start)
@@ -246,18 +263,18 @@ export struct MyPage {
               Text('每日签到')
                 .fontSize(18)
                 .fontWeight(FontWeight.Medium)
-                .fontColor('#333333')
+                .fontColor($r('app.color.text_primary'))
                 .margin({ bottom: 6 })
 
               Text('每天签到可获得 10 积分')
                 .fontSize(14)
-                .fontColor('#666666')
+                .fontColor($r('app.color.text_secondary'))
                 .width('100%')
                 .textAlign(TextAlign.Start)
 
               Text(this.hasSignedToday ? '今天已签到' : '坚持打卡，积分可用于更多训练解锁')
                 .fontSize(12)
-                .fontColor(this.hasSignedToday ? '#4CAF50' : '#999999')
+                .fontColor(this.hasSignedToday ? '#4CAF50' : $r('app.color.text_tertiary'))
                 .margin({ top: 4 })
                 .width('100%')
                 .textAlign(TextAlign.Start)
@@ -288,24 +305,24 @@ export struct MyPage {
             Text('训练数据统计')
               .fontSize(18)
               .fontWeight(FontWeight.Medium)
-              .fontColor('#333333')
+              .fontColor($r('app.color.text_primary'))
               .margin({ bottom: 12 })
 
             Row() {
               // 积分
               Column() {
                 Text(`${this.points}`)
-                  .fontSize(22)
+                  .fontSize(20)
                   .fontWeight(FontWeight.Bold)
                   .fontColor('#2196F3')
                   .margin({ bottom: 4 })
 
                 Text('总积分')
                   .fontSize(12)
-                  .fontColor('#666666')
+                  .fontColor($r('app.color.text_secondary'))
               }
               .width('30%')
-              .padding({ top: 10, bottom: 10 })
+              .padding({ top: 12, bottom: 12 })
               .backgroundColor('#F5FAFF')
               .borderRadius(10)
               .alignItems(HorizontalAlign.Center)
@@ -316,17 +333,17 @@ export struct MyPage {
               // 训练次数
               Column() {
                 Text(`${this.trainCount}`)
-                  .fontSize(22)
+                  .fontSize(20)
                   .fontWeight(FontWeight.Bold)
                   .fontColor('#FF9800')
                   .margin({ bottom: 4 })
 
                 Text('训练次数')
                   .fontSize(12)
-                  .fontColor('#666666')
+                  .fontColor($r('app.color.text_secondary'))
               }
               .width('30%')
-              .padding({ top: 10, bottom: 10 })
+              .padding({ top: 12, bottom: 12 })
               .backgroundColor('#FFF7E6')
               .borderRadius(10)
               .margin({ left: 10, right: 10 })
@@ -338,17 +355,20 @@ export struct MyPage {
               // 训练时长
               Column() {
                 Text(`${this.formatDuration(this.trainDuration)}`)
-                  .fontSize(22)
+                  .fontSize(16)
                   .fontWeight(FontWeight.Bold)
                   .fontColor('#4CAF50')
                   .margin({ bottom: 4 })
+                  .maxLines(2)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                  .textAlign(TextAlign.Center)
 
-                Text('训练时长(分钟)')
+                Text('训练时长')
                   .fontSize(12)
-                  .fontColor('#666666')
+                  .fontColor($r('app.color.text_secondary'))
               }
               .width('30%')
-              .padding({ top: 10, bottom: 10 })
+              .padding({ top: 12, bottom: 12 })
               .backgroundColor('#E8F5E9')
               .borderRadius(10)
               .alignItems(HorizontalAlign.Center)
@@ -370,12 +390,12 @@ export struct MyPage {
               Text('学习指南')
                 .fontSize(18)
                 .fontWeight(FontWeight.Medium)
-                .fontColor('#333333')
+                .fontColor($r('app.color.text_primary'))
                 .margin({ bottom: 6 })
 
               Text('掌握记忆技巧，提升学习效率')
                 .fontSize(14)
-                .fontColor('#666666')
+                .fontColor($r('app.color.text_secondary'))
                 .width('100%')
                 .textAlign(TextAlign.Start)
             }
@@ -402,12 +422,12 @@ export struct MyPage {
                 Text('问题反馈')
                   .fontSize(18)
                   .fontWeight(FontWeight.Medium)
-                  .fontColor('#333333')
+                  .fontColor($r('app.color.text_primary'))
                   .margin({ bottom: 6 })
 
                 Text('遇到问题或有建议？欢迎联系我们')
                   .fontSize(14)
-                  .fontColor('#666666')
+                  .fontColor($r('app.color.text_secondary'))
                   .width('100%')
                   .textAlign(TextAlign.Start)
               }
@@ -442,15 +462,19 @@ export struct MyPage {
       }
       .width('100%')
       .layoutWeight(1)
+      .edgeEffect(EdgeEffect.Spring)
+      .scrollBar(BarState.Auto)
 
-      // 编辑用户信息对话框
-      if (this.showEditUserDialog) {
-        this.buildEditUserDialog()
+        // 编辑用户信息对话框
+        if (this.showEditUserDialog) {
+          this.buildEditUserDialog()
+        }
       }
+      .width('100%')
+      .height('100%')
     }
     .width('100%')
     .height('100%')
-    .backgroundImage($r('app.media.bg_my_page'), ImageRepeat.NoRepeat)
   }
 
   @Builder
@@ -460,17 +484,22 @@ export struct MyPage {
         Text('编辑个人资料')
           .fontSize(18)
           .fontWeight(FontWeight.Bold)
+          .fontColor($r('app.color.text_primary'))
           .margin({ bottom: 16 })
 
         // 用户名输入（只修改名字）
         Text('用户名')
           .fontSize(14)
-          .fontColor('#666666')
+          .fontColor($r('app.color.text_secondary'))
           .margin({ bottom: 6 })
 
         TextInput({ placeholder: '请输入用户名', text: this.editUsername })
           .width('100%')
           .height(40)
+          .fontColor($r('app.color.text_primary'))
+          .placeholderColor($r('app.color.text_tertiary'))
+          .border({ width: 1, color: $r('app.color.border_color') })
+          .borderRadius(4)
           .onChange((val: string) => {
             this.editUsername = val;
           })

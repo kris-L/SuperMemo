@@ -103,6 +103,7 @@ struct BoneMatchSelect {
           .textAlign(TextAlign.Center)
           .fontSize(20)
           .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
 
         Blank()
           .width(44)
@@ -120,6 +121,7 @@ struct BoneMatchSelect {
         Text('范围')
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
           .margin({ bottom: 10 })
           .alignSelf(ItemAlign.Start)
           .width('90%')
@@ -136,6 +138,7 @@ struct BoneMatchSelect {
                 })
               Text(item)
                 .fontSize(16)
+                .fontColor($r('app.color.text_primary'))
                 .margin({ left: 8 })
             }
             .width('100%')
@@ -161,6 +164,7 @@ struct BoneMatchSelect {
         Text('难度（图数）')
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
           .margin({ bottom: 10 })
           .alignSelf(ItemAlign.Start)
           .width('90%')
@@ -174,7 +178,7 @@ struct BoneMatchSelect {
                 .height(40)
                 .padding(0)
                 .backgroundColor(this.difficulty === num ? '#2196F3' : '#FFFFFF')
-                .fontColor(this.difficulty === num ? '#FFFFFF' : '#333333')
+                .fontColor(this.difficulty === num ? '#FFFFFF' : $r('app.color.text_primary'))
                 .fontSize(14)
                 .border({ width: 1, color: this.difficulty === num ? '#2196F3' : '#DDDDDD' })
                 .borderRadius(12)
@@ -200,6 +204,7 @@ struct BoneMatchSelect {
         Text('数据区间（0 - 109）')
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
           .margin({ bottom: 10 })
           .alignSelf(ItemAlign.Start)
           .width('90%')
@@ -209,11 +214,13 @@ struct BoneMatchSelect {
           Column() {
             Text('起始')
               .fontSize(14)
-              .fontColor('#666666')
+              .fontColor($r('app.color.text_secondary'))
             TextInput({ placeholder: '0', text: this.startNumberText })
               .type(InputType.Number)
               .maxLength(3)
               .width('100%')
+              .fontColor($r('app.color.text_primary'))
+              .placeholderColor($r('app.color.text_tertiary'))
               .onChange((val: string) => {
                 this.startNumberText = val;
                 if (val !== '' && !this.validateNumber(val, true)) {
@@ -234,11 +241,13 @@ struct BoneMatchSelect {
           Column() {
             Text('结束')
               .fontSize(14)
-              .fontColor('#666666')
+              .fontColor($r('app.color.text_secondary'))
             TextInput({ placeholder: '109', text: this.endNumberText })
               .type(InputType.Number)
               .maxLength(3)
               .width('100%')
+              .fontColor($r('app.color.text_primary'))
+              .placeholderColor($r('app.color.text_tertiary'))
               .onChange((val: string) => {
                 this.endNumberText = val;
                 if (val !== '' && !this.validateNumber(val, false)) {

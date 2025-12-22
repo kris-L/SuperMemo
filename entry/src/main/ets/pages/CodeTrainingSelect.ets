@@ -29,7 +29,7 @@ struct CodeTrainingSelect {
 
   build() {
     Column() {
-      // 顶部栏
+      // 顶部栏（固定，不滚动）
       Row() {
         Button() {
           Image($r('sys.media.ohos_ic_back'))
@@ -48,6 +48,7 @@ struct CodeTrainingSelect {
           .textAlign(TextAlign.Center)
           .fontSize(20)
           .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
 
         Blank()
           .width(44)
@@ -60,134 +61,151 @@ struct CodeTrainingSelect {
       .alignItems(VerticalAlign.Center)
       .margin({ bottom: 10 })
 
-      // 图片库选择
-      Text('图片库选择：')
-        .fontSize(18)
-        .fontWeight(FontWeight.Medium)
-        .margin({ bottom: 15 })
-        .alignSelf(ItemAlign.Start)
-        .margin({ left: 20 })
-
-      Column() {
-        Image($r('app.media.ic_code'))
-          .width(40)
-          .height(40)
-          .margin({ bottom: 10 })
-        Text(this.selectedCodeLibrary)
-          .fontSize(16)
-      }
-      .width('90%')
-      .height(100)
-      .justifyContent(FlexAlign.Center)
-      .padding({ top: 15, bottom: 15 })
-      .backgroundColor(Color.White)
-      .borderRadius(8)
-      .margin({ bottom: 30 })
-
-      // 训练模式选择
-      Text('训练模式：')
-        .fontSize(18)
-        .fontWeight(FontWeight.Medium)
-        .margin({ bottom: 15 })
-        .alignSelf(ItemAlign.Start)
-        .margin({ left: 20 })
-
-      Row() {
-        // 编码学习
+      // 可滚动内容区域
+      Scroll() {
         Column() {
-          Image($r('app.media.ic_study'))
-            .width(50)
-            .height(50)
-            .margin({ bottom: 8 })
-          Text('编码学习')
-            .fontSize(16)
+          // 图片库选择
+          Text('图片库选择：')
+            .fontSize(18)
             .fontWeight(FontWeight.Medium)
-            .margin({ bottom: 5 })
-          Text('自动播放110的编码，系统学习')
-            .fontSize(12)
-            .fontColor('#666666')
-            .textAlign(TextAlign.Center)
-          // 占位空间，确保与看图选数对齐
-          Row()
-            .width('100%')
-            .height(20)
-        }
-        .width('48%')
-        .aspectRatio(1)
-        .justifyContent(FlexAlign.Center)
-        .padding(15)
-        .backgroundColor(Color.White)
-        .borderRadius(8)
-        .border({ width: 2, color: '#2196F3' })
-        .onClick(() => {
-          // TODO: 跳转到编码学习页面
-          router.pushUrl({ url: 'pages/CodeStudy' });
-        })
+            .fontColor($r('app.color.text_primary'))
+            .margin({ bottom: 15 })
+            .alignSelf(ItemAlign.Start)
+            .margin({ left: 20 })
 
-        // 看图选数
-        Column() {
-          Image($r('app.media.ic_select_number'))
-            .width(50)
-            .height(50)
-            .margin({ bottom: 8 })
-          Text('看图选数')
-            .fontSize(16)
-            .fontWeight(FontWeight.Medium)
-            .margin({ bottom: 5 })
-          Text('看桩图片，选择对应的数字')
-            .fontSize(12)
-            .fontColor('#666666')
-            .textAlign(TextAlign.Center)
-            .margin({ bottom: 5 })
-          
-          // 记录信息（仅看图选数显示，水平显示）
-          Row() {
-            Text('最佳：')
-              .fontSize(11)
-              .fontColor('#666666')
-            Text(`${this.bestAccuracy}%`)
-              .fontSize(12)
-              .fontWeight(FontWeight.Bold)
-              .fontColor('#4CAF50')
-            
-            Text('  训练：')
-              .fontSize(11)
-              .fontColor('#666666')
-              .margin({ left: 8 })
-            Text(`${this.trainCount}次`)
-              .fontSize(12)
-              .fontWeight(FontWeight.Bold)
-              .fontColor('#2196F3')
+          Column() {
+            Image($r('app.media.ic_code'))
+              .width(40)
+              .height(40)
+              .margin({ bottom: 10 })
+            Text(this.selectedCodeLibrary)
+              .fontSize(16)
+              .fontColor($r('app.color.text_primary'))
           }
-          .width('100%')
-          .height(20)
+          .width('90%')
+          .height(100)
           .justifyContent(FlexAlign.Center)
-        }
-        .width('48%')
-        .aspectRatio(1)
-        .justifyContent(FlexAlign.Center)
-        .padding(15)
-        .backgroundColor(Color.White)
-        .borderRadius(8)
-        .border({ width: 2, color: '#2196F3' })
-        .onClick(() => {
-          // TODO: 跳转到看图选数页面
-          router.pushUrl({ url: 'pages/SelectNumber' });
-        })
-      }
-      .width('90%')
-      .justifyContent(FlexAlign.SpaceBetween)
-      .margin({ bottom: 30 })
+          .padding({ top: 15, bottom: 15 })
+          .backgroundColor(Color.White)
+          .borderRadius(8)
+          .margin({ bottom: 30 })
 
-      // 返回按钮
-      Button('返回')
-        .width('80%')
-        .height(50)
-        .fontSize(18)
-        .backgroundColor('#9E9E9E')
-        .onClick(() => {
-          router.back();
-        })
+          // 训练模式选择
+          Text('训练模式：')
+            .fontSize(18)
+            .fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.text_primary'))
+            .margin({ bottom: 15 })
+            .alignSelf(ItemAlign.Start)
+            .margin({ left: 20 })
+
+          Row() {
+            // 编码学习
+            Column() {
+              Image($r('app.media.ic_study'))
+                .width(50)
+                .height(50)
+                .margin({ bottom: 8 })
+              Text('编码学习')
+                .fontSize(16)
+                .fontWeight(FontWeight.Medium)
+                .fontColor($r('app.color.text_primary'))
+                .margin({ bottom: 5 })
+              Text('自动播放110的编码，系统学习')
+                .fontSize(12)
+                .fontColor($r('app.color.text_secondary'))
+                .textAlign(TextAlign.Center)
+              // 占位空间，确保与看图选数对齐
+              Row()
+                .width('100%')
+                .height(20)
+            }
+            .width('48%')
+            .height(180)
+            .justifyContent(FlexAlign.Center)
+            .padding(15)
+            .backgroundColor(Color.White)
+            .borderRadius(8)
+            .border({ width: 2, color: '#2196F3' })
+            .onClick(() => {
+              // TODO: 跳转到编码学习页面
+              router.pushUrl({ url: 'pages/CodeStudy' });
+            })
+
+            // 看图选数
+            Column() {
+              Image($r('app.media.ic_select_number'))
+                .width(50)
+                .height(50)
+                .margin({ bottom: 8 })
+              Text('看图选数')
+                .fontSize(16)
+                .fontWeight(FontWeight.Medium)
+                .fontColor($r('app.color.text_primary'))
+                .margin({ bottom: 5 })
+              Text('看桩图片，选择对应的数字')
+                .fontSize(12)
+                .fontColor($r('app.color.text_secondary'))
+                .textAlign(TextAlign.Center)
+                .margin({ bottom: 5 })
+              
+              // 记录信息（仅看图选数显示，水平显示）
+              Row() {
+                Text('最佳：')
+                  .fontSize(11)
+                  .fontColor($r('app.color.text_secondary'))
+                Text(`${this.bestAccuracy}%`)
+                  .fontSize(12)
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor('#4CAF50')
+                
+                Text('  训练：')
+                  .fontSize(11)
+                  .fontColor($r('app.color.text_secondary'))
+                  .margin({ left: 8 })
+                Text(`${this.trainCount}次`)
+                  .fontSize(12)
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor('#2196F3')
+              }
+              .width('100%')
+              .height(20)
+              .justifyContent(FlexAlign.Center)
+            }
+            .width('48%')
+            .height(180)
+            .justifyContent(FlexAlign.Center)
+            .padding(15)
+            .backgroundColor(Color.White)
+            .borderRadius(8)
+            .border({ width: 2, color: '#2196F3' })
+            .onClick(() => {
+              // TODO: 跳转到看图选数页面
+              router.pushUrl({ url: 'pages/SelectNumber' });
+            })
+          }
+          .width('90%')
+          .justifyContent(FlexAlign.SpaceBetween)
+          .margin({ bottom: 30 })
+
+          // 返回按钮
+          Button('返回')
+            .width('80%')
+            .height(50)
+            .fontSize(18)
+            .backgroundColor('#9E9E9E')
+            .onClick(() => {
+              router.back();
+            })
+            .margin({ bottom: 20 })
+        }
+        .width('100%')
+        .alignItems(HorizontalAlign.Center)
+      }
+      .width('100%')
+      .layoutWeight(1)
+      .scrollBar(BarState.Auto)
+      .edgeEffect(EdgeEffect.Spring)
     }
     .width('100%')
     .height('100%')

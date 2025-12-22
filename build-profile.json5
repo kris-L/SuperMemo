@@ -1,10 +1,37 @@
 {
   "app": {
-    "signingConfigs": [],
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "C:/Users/kris/.ohos/config/default_SuperMemo_Wv7Hf006lkg-t8tzaMTF60Wia2eh1SxwJleHSHww5uQ=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001BA86521899BADDF7E18FB56C9CFDB0FDEF8EC4588B3DA9570B0AA9936007D1D640CC417D75320B8",
+          "profile": "C:/Users/kris/.ohos/config/default_SuperMemo_Wv7Hf006lkg-t8tzaMTF60Wia2eh1SxwJleHSHww5uQ=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "C:/Users/kris/.ohos/config/default_SuperMemo_Wv7Hf006lkg-t8tzaMTF60Wia2eh1SxwJleHSHww5uQ=.p12",
+          "storePassword": "0000001B904814E970675EB865E85CFC511E29517AB179BE489BC724C6D07693E74B55FDE737F70E53DA85"
+        }
+      },
+      {
+        "name": "release",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "E:/huawei/license/kris.cer",
+          "keyAlias": "kris",
+          "keyPassword": "0000001C48937753006D1EF1C7EF76456FFFEDB3BD82D0BEEA11E7F96901FA9B208D186BB79345DB8B7960AB",
+          "profile": "E:/huawei/license/正式发布Release.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "E:/huawei/license/harmonyKey.p12",
+          "storePassword": "0000001CD275285B07C2AC40D246C0EDF983EB520D8FC9676E2DA0746EC65453B69917AC9CDF0C3E4F89B896"
+        }
+      }
+    ],
     "products": [
       {
         "name": "default",
-        "signingConfig": "default",
+        "signingConfig": "release",
         "targetSdkVersion": "6.0.0(20)",
         "compatibleSdkVersion": "5.0.1(13)",
         "runtimeOS": "HarmonyOS",

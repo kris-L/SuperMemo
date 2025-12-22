@@ -37,6 +37,8 @@ export interface DailyTrainingProgress {
   dateKey: number; // 例如 20250101
   roundsCompleted: number;
   totalRounds: number;
+  startTime?: number; // 训练开始时间戳（毫秒）
+  elapsedTime?: number; // 已用时间（秒）
 }
 
 /**
@@ -117,7 +119,9 @@ const SQL_CREATE_DAILY_TRAINING_TABLE = `
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date_key INTEGER NOT NULL UNIQUE,
     rounds_completed INTEGER NOT NULL DEFAULT 0,
-    total_rounds INTEGER NOT NULL DEFAULT 10
+    total_rounds INTEGER NOT NULL DEFAULT 10,
+    start_time INTEGER,
+    elapsed_time INTEGER NOT NULL DEFAULT 0
   )
 `;
 
@@ -137,6 +141,25 @@ const SQL_CREATE_TRAINING_RECORD_TABLE = `
     game_type TEXT NOT NULL,
     duration INTEGER NOT NULL,
     create_time INTEGER NOT NULL
+  )
+`;
+
+/**
+ * 110数字桩考试记录数据接口
+ */
+export interface NumberPegExamRecord {
+  id?: number;
+  examDate: number; // 考试日期（例如 20250101）
+  examTime: number; // 考试时间戳（毫秒）
+  duration: number; // 总时长（秒）
+}
+
+const SQL_CREATE_NUMBER_PEG_EXAM_TABLE = `
+  CREATE TABLE IF NOT EXISTS number_peg_exam (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    exam_date INTEGER NOT NULL,
+    exam_time INTEGER NOT NULL,
+    duration INTEGER NOT NULL
   )
 `;
 
@@ -178,6 +201,10 @@ export class DatabaseManager {
       await this.rdbStore.executeSql(SQL_CREATE_DAILY_TRAINING_TABLE);
       await this.rdbStore.executeSql(SQL_CREATE_POINTS_RECORD_TABLE);
       await this.rdbStore.executeSql(SQL_CREATE_TRAINING_RECORD_TABLE);
+      await this.rdbStore.executeSql(SQL_CREATE_NUMBER_PEG_EXAM_TABLE);
+      
+      // 迁移 daily_training_progress 表，添加新字段（如果不存在）
+      await this.migrateDailyTrainingTable();
       
       this.isInitialized = true;
       console.info('[DatabaseManager] 数据库初始化成功');
@@ -302,6 +329,38 @@ export class DatabaseManager {
   // ==================== 今日训练进度相关方法 ====================
 
   /**
+   * 迁移 daily_training_progress 表，添加新字段
+   */
+  private async migrateDailyTrainingTable(): Promise<void> {
+    if (!this.rdbStore) {
+      return;
+    }
+
+    try {
+      // 尝试添加 start_time 字段（如果不存在会报错，忽略即可）
+      try {
+        await this.rdbStore.executeSql('ALTER TABLE daily_training_progress ADD COLUMN start_time INTEGER');
+        console.info('[DatabaseManager] 添加 start_time 字段成功');
+      } catch (err) {
+        // 字段已存在，忽略错误
+        console.info('[DatabaseManager] start_time 字段已存在或添加失败（可忽略）');
+      }
+
+      // 尝试添加 elapsed_time 字段（如果不存在会报错，忽略即可）
+      try {
+        await this.rdbStore.executeSql('ALTER TABLE daily_training_progress ADD COLUMN elapsed_time INTEGER NOT NULL DEFAULT 0');
+        console.info('[DatabaseManager] 添加 elapsed_time 字段成功');
+      } catch (err) {
+        // 字段已存在，忽略错误
+        console.info('[DatabaseManager] elapsed_time 字段已存在或添加失败（可忽略）');
+      }
+    } catch (err) {
+      console.error(`[DatabaseManager] 迁移 daily_training_progress 表失败: ${JSON.stringify(err)}`);
+      // 不抛出错误，避免影响应用启动
+    }
+  }
+
+  /**
    * 获取当前日期的日期键（格式：yyyyMMdd，例如 20250101）
    */
   public static getTodayDateKey(): number {
@@ -348,7 +407,9 @@ export class DatabaseManager {
         'id',
         'date_key',
         'rounds_completed',
-        'total_rounds'
+        'total_rounds',
+        'start_time',
+        'elapsed_time'
       ]);
 
       if (resultSet.goToFirstRow()) {
@@ -356,12 +417,16 @@ export class DatabaseManager {
         const dateKeyIndex = resultSet.getColumnIndex('date_key');
         const roundsIndex = resultSet.getColumnIndex('rounds_completed');
         const totalIndex = resultSet.getColumnIndex('total_rounds');
+        const startTimeIndex = resultSet.getColumnIndex('start_time');
+        const elapsedTimeIndex = resultSet.getColumnIndex('elapsed_time');
 
         const progress: DailyTrainingProgress = {
           id: resultSet.getLong(idIndex),
           dateKey: resultSet.getLong(dateKeyIndex),
           roundsCompleted: resultSet.getLong(roundsIndex),
-          totalRounds: resultSet.getLong(totalIndex)
+          totalRounds: resultSet.getLong(totalIndex),
+          startTime: resultSet.isColumnNull(startTimeIndex) ? undefined : resultSet.getLong(startTimeIndex),
+          elapsedTime: resultSet.isColumnNull(elapsedTimeIndex) ? 0 : resultSet.getLong(elapsedTimeIndex)
         };
         resultSet.close();
         return progress;
@@ -373,7 +438,9 @@ export class DatabaseManager {
       const valuesBucket: ValuesBucket = {
         'date_key': dateKey,
         'rounds_completed': 0,
-        'total_rounds': 10
+        'total_rounds': 10,
+        'start_time': null,
+        'elapsed_time': 0
       };
       const insertId: number = await this.rdbStore.insert('daily_training_progress', valuesBucket);
       console.info(`[DatabaseManager] 创建默认今日训练进度成功: id=${insertId}, dateKey=${dateKey}`);
@@ -382,7 +449,9 @@ export class DatabaseManager {
         id: insertId,
         dateKey,
         roundsCompleted: 0,
-        totalRounds: 10
+        totalRounds: 10,
+        startTime: undefined,
+        elapsedTime: 0
       };
       return progress;
     } catch (err) {
@@ -394,7 +463,7 @@ export class DatabaseManager {
   /**
    * 更新某天的今日训练轮次进度
    */
-  public async updateDailyTrainingProgress(dateKey: number, roundsCompleted: number, totalRounds: number = 10): Promise<void> {
+  public async updateDailyTrainingProgress(dateKey: number, roundsCompleted: number, totalRounds: number = 10, startTime?: number, elapsedTime?: number): Promise<void> {
     if (!this.rdbStore) {
       throw new Error('数据库未初始化');
     }
@@ -404,6 +473,13 @@ export class DatabaseManager {
         'rounds_completed': roundsCompleted,
         'total_rounds': totalRounds
       };
+      
+      if (startTime !== undefined) {
+        valuesBucket['start_time'] = startTime;
+      }
+      if (elapsedTime !== undefined) {
+        valuesBucket['elapsed_time'] = elapsedTime;
+      }
 
       const predicates = new relationalStore.RdbPredicates('daily_training_progress');
       predicates.equalTo('date_key', dateKey);
@@ -414,7 +490,9 @@ export class DatabaseManager {
         const insertBucket: ValuesBucket = {
           'date_key': dateKey,
           'rounds_completed': roundsCompleted,
-          'total_rounds': totalRounds
+          'total_rounds': totalRounds,
+          'start_time': startTime || null,
+          'elapsed_time': elapsedTime || 0
         };
         await this.rdbStore.insert('daily_training_progress', insertBucket);
       }
@@ -422,6 +500,42 @@ export class DatabaseManager {
     } catch (err) {
       console.error(`[DatabaseManager] 更新今日训练进度失败: ${JSON.stringify(err)}`);
       throw new Error('更新今日训练进度失败: ' + JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 保存今日训练的时间信息（开始时间和已用时间）
+   */
+  public async saveTrainingTime(dateKey: number, startTime: number, elapsedTime: number): Promise<void> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const valuesBucket: ValuesBucket = {
+        'start_time': startTime,
+        'elapsed_time': elapsedTime
+      };
+
+      const predicates = new relationalStore.RdbPredicates('daily_training_progress');
+      predicates.equalTo('date_key', dateKey);
+
+      const rowsAffected: number = await this.rdbStore.update(valuesBucket, predicates);
+      if (rowsAffected === 0) {
+        // 记录不存在时插入
+        const insertBucket: ValuesBucket = {
+          'date_key': dateKey,
+          'rounds_completed': 0,
+          'total_rounds': 10,
+          'start_time': startTime,
+          'elapsed_time': elapsedTime
+        };
+        await this.rdbStore.insert('daily_training_progress', insertBucket);
+      }
+      console.info(`[DatabaseManager] 保存训练时间成功: dateKey=${dateKey}, startTime=${startTime}, elapsedTime=${elapsedTime}`);
+    } catch (err) {
+      console.error(`[DatabaseManager] 保存训练时间失败: ${JSON.stringify(err)}`);
+      throw new Error('保存训练时间失败: ' + JSON.stringify(err));
     }
   }
 
@@ -1096,6 +1210,75 @@ export class DatabaseManager {
     } catch (err) {
       console.error(`[DatabaseManager] 查询训练记录失败: ${JSON.stringify(err)}`);
       throw new Error('查询训练记录失败: ' + JSON.stringify(err));
+    }
+  }
+
+  // ==================== 110数字桩考试记录相关方法 ====================
+
+  /**
+   * 插入110数字桩考试记录
+   */
+  public async insertNumberPegExamRecord(record: NumberPegExamRecord): Promise<number> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const valuesBucket: ValuesBucket = {
+        'exam_date': record.examDate,
+        'exam_time': record.examTime,
+        'duration': record.duration
+      };
+
+      const insertId: number = await this.rdbStore.insert('number_peg_exam', valuesBucket);
+      console.info(`[DatabaseManager] 插入110数字桩考试记录成功: examDate=${record.examDate}, duration=${record.duration}, id=${insertId}`);
+      return insertId;
+    } catch (err) {
+      console.error(`[DatabaseManager] 插入110数字桩考试记录失败: ${JSON.stringify(err)}`);
+      throw new Error('插入110数字桩考试记录失败: ' + JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 查询所有110数字桩考试记录（按时间倒序）
+   */
+  public async getAllNumberPegExamRecords(): Promise<NumberPegExamRecord[]> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const predicates = new relationalStore.RdbPredicates('number_peg_exam');
+      predicates.orderByDesc('exam_time');
+      
+      const resultSet: relationalStore.ResultSet = await this.rdbStore.query(predicates, [
+        'id',
+        'exam_date',
+        'exam_time',
+        'duration'
+      ]);
+      
+      const records: NumberPegExamRecord[] = [];
+      const idIndex: number = resultSet.getColumnIndex('id');
+      const examDateIndex: number = resultSet.getColumnIndex('exam_date');
+      const examTimeIndex: number = resultSet.getColumnIndex('exam_time');
+      const durationIndex: number = resultSet.getColumnIndex('duration');
+      
+      while (resultSet.goToNextRow()) {
+        const record: NumberPegExamRecord = {
+          id: resultSet.getLong(idIndex),
+          examDate: resultSet.getLong(examDateIndex),
+          examTime: resultSet.getLong(examTimeIndex),
+          duration: resultSet.getLong(durationIndex)
+        };
+        records.push(record);
+      }
+      
+      resultSet.close();
+      return records;
+    } catch (err) {
+      console.error(`[DatabaseManager] 查询110数字桩考试记录失败: ${JSON.stringify(err)}`);
+      throw new Error('查询110数字桩考试记录失败: ' + JSON.stringify(err));
     }
   }
 }

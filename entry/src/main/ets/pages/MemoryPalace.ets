@@ -64,6 +64,7 @@ export struct MemoryPalace {
           .textAlign(TextAlign.Center)
           .fontSize(20)
           .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
 
         Blank()
           .width(44)
@@ -115,14 +116,14 @@ export struct MemoryPalace {
         Text(item.title)
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#333333')
+          .fontColor($r('app.color.text_primary'))
           .margin({ bottom: 4 })
           .alignSelf(ItemAlign.Start)
 
         // 功能说明
         Text(item.description)
           .fontSize(12)
-          .fontColor('#666666')
+          .fontColor($r('app.color.text_secondary'))
           .alignSelf(ItemAlign.Start)
       }
       .layoutWeight(1)

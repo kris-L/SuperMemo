@@ -75,6 +75,7 @@ struct PointsRecordPage {
           .textAlign(TextAlign.Center)
           .fontSize(20)
           .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
 
         Blank()
           .width(44)
@@ -103,7 +104,7 @@ struct PointsRecordPage {
         Column() {
           Text('暂无积分记录')
             .fontSize(16)
-            .fontColor('#999999')
+            .fontColor($r('sys.color.ohos_id_color_text_tertiary'))
         }
         .width('100%')
         .layoutWeight(1)
@@ -119,13 +120,13 @@ struct PointsRecordPage {
                   Text(record.source)
                     .fontSize(16)
                     .fontWeight(FontWeight.Medium)
-                    .fontColor('#333333')
+                    .fontColor($r('app.color.text_primary'))
                     .margin({ bottom: 6 })
 
                   // 时间
                   Text(this.formatDateTime(record.createTime))
                     .fontSize(12)
-                    .fontColor('#999999')
+                    .fontColor($r('app.color.text_tertiary'))
                 }
                 .layoutWeight(1)
                 .alignItems(HorizontalAlign.Start)

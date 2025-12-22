@@ -112,8 +112,8 @@ struct MemoryPalacePractice {
         children: []
       };
 
-      // 计算分类颜色的中间值（用于所有桩）
-      const pegColor = this.getMiddleColor(categoryColor);
+      // 桩节点直接使用分类节点的颜色值
+      const pegColor = categoryColor;
       category.pegs.forEach((peg, pegIndex) => {
         const pegNode: PracticeTreeNode = {
           id: `peg_${categoryIndex}_${pegIndex}`,
@@ -270,6 +270,7 @@ struct MemoryPalacePractice {
             .textAlign(TextAlign.Center)
             .fontSize(20)
             .fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.text_primary'))
 
           Blank()
             .width(44)

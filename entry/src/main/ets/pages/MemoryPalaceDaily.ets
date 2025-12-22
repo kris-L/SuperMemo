@@ -107,6 +107,7 @@ struct MemoryPalaceDaily {
           .textAlign(TextAlign.Center)
           .fontSize(20)
           .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_primary'))
 
         Blank()
           .width(44)
@@ -135,12 +136,12 @@ struct MemoryPalaceDaily {
               Text('导入记忆宫殿')
                 .fontSize(16)
                 .fontWeight(FontWeight.Medium)
-                .fontColor('#333333')
+                .fontColor($r('app.color.text_primary'))
                 .alignSelf(ItemAlign.Start)
 
               Text('从已有宫殿中选择导入')
                 .fontSize(12)
-                .fontColor('#666666')
+                .fontColor($r('app.color.text_secondary'))
                 .alignSelf(ItemAlign.Start)
             }
             .layoutWeight(1)
@@ -270,6 +271,7 @@ struct MemoryPalaceDaily {
         Text('选择要导入的记忆宫殿')
           .fontSize(18)
           .fontWeight(FontWeight.Bold)
+          .fontColor($r('app.color.text_primary'))
           .margin({ bottom: 16 })
 
         Scroll() {
