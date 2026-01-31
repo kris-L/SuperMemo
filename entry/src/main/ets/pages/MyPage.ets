@@ -384,36 +384,65 @@ export struct MyPage {
           .shadow({ radius: 6, color: '#1F000000', offsetX: 0, offsetY: 2 })
           .margin({ left: 10, right: 10, bottom: 16 })
 
-          // 学习指南卡片
-          Row() {
-            Column() {
-              Text('学习指南')
-                .fontSize(18)
-                .fontWeight(FontWeight.Medium)
-                .fontColor($r('app.color.text_primary'))
-                .margin({ bottom: 6 })
+          // 考试成绩和学习指南卡片（一行水平平铺）
+          Grid() {
+            // 考试成绩卡片
+            GridItem() {
+              Column() {
+                // 图片
+                Image($r('app.media.ic_exam_results'))
+                  .width(40)
+                  .height(40)
+                  .objectFit(ImageFit.Contain)
+                  .margin({ bottom: 8 })
 
-              Text('掌握记忆技巧，提升学习效率')
-                .fontSize(14)
-                .fontColor($r('app.color.text_secondary'))
-                .width('100%')
-                .textAlign(TextAlign.Start)
+                // 功能说明
+                Text('考试成绩')
+                  .fontSize(16)
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor($r('app.color.text_primary'))
+              }
+              .width('100%')
+              .padding({ top: 12, bottom: 12, left: 12, right: 12 })
+              .backgroundColor('#fdeadc')
+              .borderRadius(12)
+              .shadow({ radius: 4, color: '#19000000', offsetX: 0, offsetY: 2 })
+              .onClick(() => {
+                router.pushUrl({ url: 'pages/ExamScoreSummary' });
+              })
             }
-            .layoutWeight(1)
-            .alignItems(HorizontalAlign.Start)
 
-            Image($r('app.media.ic_right_arrow'))
-              .width(24)
-              .height(24)
+            // 学习指南卡片
+            GridItem() {
+              Column() {
+                // 图片
+                Image($r('app.media.ic_tutorial'))
+                  .width(40)
+                  .height(40)
+                  .objectFit(ImageFit.Contain)
+                  .margin({ bottom: 8 })
+
+                // 功能说明
+                Text('学习指南')
+                  .fontSize(16)
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor($r('app.color.text_primary'))
+              }
+              .width('100%')
+              .padding({ top: 12, bottom: 12, left: 12, right: 12 })
+              .backgroundColor('#fdeadc')
+              .borderRadius(12)
+              .shadow({ radius: 4, color: '#19000000', offsetX: 0, offsetY: 2 })
+              .onClick(() => {
+                router.pushUrl({ url: 'pages/GuideList' });
+              })
           }
-          .padding({ top: 16, bottom: 16, left: 16, right: 16 })
-          .backgroundColor(Color.White)
-          .borderRadius(12)
-          .shadow({ radius: 6, color: '#1F000000', offsetX: 0, offsetY: 2 })
-          .margin({ left: 10, right: 10, bottom: 24 })
-          .onClick(() => {
-            router.pushUrl({ url: 'pages/GuideList' });
-          })
+          }
+          .columnsTemplate('1fr 1fr')
+          .columnsGap(12)
+          .rowsGap(12)
+          .width('100%')
+          .padding({ left: 16, right: 16, bottom: 16 })
 
           // 联系我们/问题反馈卡片
           Column() {

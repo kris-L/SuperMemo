@@ -61,8 +61,6 @@ struct CodeTrainingSelect {
       .alignItems(VerticalAlign.Center)
       .margin({ bottom: 10 })
 
-      // 可滚动内容区域
-      Scroll() {
         Column() {
           // 图片库选择
           Text('图片库选择：')
@@ -201,11 +199,6 @@ struct CodeTrainingSelect {
         }
         .width('100%')
         .alignItems(HorizontalAlign.Center)
-      }
-      .width('100%')
-      .layoutWeight(1)
-      .scrollBar(BarState.Auto)
-      .edgeEffect(EdgeEffect.Spring)
     }
     .width('100%')
     .height('100%')

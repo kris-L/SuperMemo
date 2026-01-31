@@ -173,11 +173,11 @@ struct PokerMemory {
         Row() {
           Button() {
             Image($r('sys.media.ohos_ic_back'))
-              .width(24)
-              .height(24)
+              .width(20)
+              .height(20)
           }
-          .width(44)
-          .height(44)
+          .width(36)
+          .height(36)
           .backgroundColor(Color.Transparent)
           .onClick(() => {
             router.back();
@@ -191,12 +191,12 @@ struct PokerMemory {
             .fontColor($r('app.color.text_primary'))
 
           Blank()
-            .width(44)
-            .height(44)
+            .width(36)
+            .height(36)
         }
         .width('100%')
-        .height(56)
-        .padding({ left: 12, right: 12 })
+        .height(48)
+        .padding({ left: 12, right: 12, top: 8, bottom: 8 })
         .justifyContent(FlexAlign.Start)
         .alignItems(VerticalAlign.Center)
         .margin({ bottom: 10 })
@@ -319,24 +319,13 @@ struct PokerMemory {
             }
             .width('90%')
             .justifyContent(FlexAlign.SpaceBetween)
-            .margin({ bottom: 24, top: 4 })
-
-            // 返回按钮
-            Button('返回')
-              .width('70%')
-              .height(46)
-              .fontSize(16)
-              .backgroundColor('#9E9E9E')
-              .onClick(() => {
-                router.back();
-              })
-              .margin({ bottom: 20 })
+            .margin({ bottom: 20, top: 4 })
           }
           .width('100%')
           .alignItems(HorizontalAlign.Center)
         }
         .width('100%')
-        .layoutWeight(1)
+        .layoutWeight(0)
         .scrollBar(BarState.Auto)
         .edgeEffect(EdgeEffect.Spring)
       }

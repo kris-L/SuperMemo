@@ -23,11 +23,17 @@
     "pages/TrainingRecord",
     "pages/GuideList",
     "pages/GuideDetail",
-    "pages/ExamList",
+      "pages/ExamList",
     "pages/NumberPegExam",
+    "pages/StratagemExam",
+    "pages/ProvinceExam",
+    "pages/PokerMemoryExam",
+    "pages/ExamScoreSummary",
+    "pages/ExamScoreDetail",
     "pages/FlipCardSelect",
     "pages/FlipCard",
     "pages/RoutePalaceSelect",
-    "pages/RoutePalace"
+    "pages/RoutePalace",
+    "pages/BoneMatchExam"
   ]
 }

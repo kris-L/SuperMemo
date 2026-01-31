@@ -877,6 +877,8 @@ struct MindMapBuilder {
           .width('100%')
           .height(160) // 更高的高度，便于多行输入
           .maxLength(200)
+          .fontColor($r('app.color.text_primary'))
+          .placeholderColor($r('app.color.text_tertiary'))
           .onChange((val: string) => {
             this.editText = val;
           })

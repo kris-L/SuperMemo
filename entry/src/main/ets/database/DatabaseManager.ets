@@ -154,8 +154,65 @@ export interface NumberPegExamRecord {
   duration: number; // 总时长（秒）
 }
 
+/**
+ * 三十六计考试记录数据接口
+ */
+export interface StratagemExamRecord {
+  id?: number;
+  examDate: number; // 考试日期（例如 20250101）
+  examTime: number; // 考试时间戳（毫秒）
+  duration: number; // 总时长（秒）
+}
+
+/**
+ * 34省考试记录数据接口
+ */
+export interface ProvinceExamRecord {
+  id?: number;
+  examDate: number; // 考试日期（例如 20250101）
+  examTime: number; // 考试时间戳（毫秒）
+  duration: number; // 总时长（秒）
+}
+
+/**
+ * 扑克记忆考试记录数据接口
+ */
+export interface PokerExamRecord {
+  id?: number;
+  examDate: number; // 考试日期（例如 20250101）
+  examTime: number; // 考试时间戳（毫秒）
+  duration: number; // 总时长（秒）
+}
+
 const SQL_CREATE_NUMBER_PEG_EXAM_TABLE = `
   CREATE TABLE IF NOT EXISTS number_peg_exam (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    exam_date INTEGER NOT NULL,
+    exam_time INTEGER NOT NULL,
+    duration INTEGER NOT NULL
+  )
+`;
+
+const SQL_CREATE_STRATAGEM_EXAM_TABLE = `
+  CREATE TABLE IF NOT EXISTS stratagem_exam (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    exam_date INTEGER NOT NULL,
+    exam_time INTEGER NOT NULL,
+    duration INTEGER NOT NULL
+  )
+`;
+
+const SQL_CREATE_PROVINCE_EXAM_TABLE = `
+  CREATE TABLE IF NOT EXISTS province_exam (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    exam_date INTEGER NOT NULL,
+    exam_time INTEGER NOT NULL,
+    duration INTEGER NOT NULL
+  )
+`;
+
+const SQL_CREATE_POKER_EXAM_TABLE = `
+  CREATE TABLE IF NOT EXISTS poker_exam (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     exam_date INTEGER NOT NULL,
     exam_time INTEGER NOT NULL,
@@ -202,6 +259,9 @@ export class DatabaseManager {
       await this.rdbStore.executeSql(SQL_CREATE_POINTS_RECORD_TABLE);
       await this.rdbStore.executeSql(SQL_CREATE_TRAINING_RECORD_TABLE);
       await this.rdbStore.executeSql(SQL_CREATE_NUMBER_PEG_EXAM_TABLE);
+      await this.rdbStore.executeSql(SQL_CREATE_STRATAGEM_EXAM_TABLE);
+      await this.rdbStore.executeSql(SQL_CREATE_PROVINCE_EXAM_TABLE);
+      await this.rdbStore.executeSql(SQL_CREATE_POKER_EXAM_TABLE);
       
       // 迁移 daily_training_progress 表，添加新字段（如果不存在）
       await this.migrateDailyTrainingTable();
@@ -1279,6 +1339,213 @@ export class DatabaseManager {
     } catch (err) {
       console.error(`[DatabaseManager] 查询110数字桩考试记录失败: ${JSON.stringify(err)}`);
       throw new Error('查询110数字桩考试记录失败: ' + JSON.stringify(err));
+    }
+  }
+
+  // ==================== 三十六计考试记录相关方法 ====================
+
+  /**
+   * 插入三十六计考试记录
+   */
+  public async insertStratagemExamRecord(record: StratagemExamRecord): Promise<number> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const valuesBucket: ValuesBucket = {
+        'exam_date': record.examDate,
+        'exam_time': record.examTime,
+        'duration': record.duration
+      };
+
+      const insertId: number = await this.rdbStore.insert('stratagem_exam', valuesBucket);
+      console.info(`[DatabaseManager] 插入三十六计考试记录成功: examDate=${record.examDate}, duration=${record.duration}, id=${insertId}`);
+      return insertId;
+    } catch (err) {
+      console.error(`[DatabaseManager] 插入三十六计考试记录失败: ${JSON.stringify(err)}`);
+      throw new Error('插入三十六计考试记录失败: ' + JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 查询所有三十六计考试记录（按时间倒序）
+   */
+  public async getAllStratagemExamRecords(): Promise<StratagemExamRecord[]> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const predicates = new relationalStore.RdbPredicates('stratagem_exam');
+      predicates.orderByDesc('exam_time');
+      
+      const resultSet: relationalStore.ResultSet = await this.rdbStore.query(predicates, [
+        'id',
+        'exam_date',
+        'exam_time',
+        'duration'
+      ]);
+      
+      const records: StratagemExamRecord[] = [];
+      const idIndex: number = resultSet.getColumnIndex('id');
+      const examDateIndex: number = resultSet.getColumnIndex('exam_date');
+      const examTimeIndex: number = resultSet.getColumnIndex('exam_time');
+      const durationIndex: number = resultSet.getColumnIndex('duration');
+      
+      while (resultSet.goToNextRow()) {
+        const record: StratagemExamRecord = {
+          id: resultSet.getLong(idIndex),
+          examDate: resultSet.getLong(examDateIndex),
+          examTime: resultSet.getLong(examTimeIndex),
+          duration: resultSet.getLong(durationIndex)
+        };
+        records.push(record);
+      }
+      
+      resultSet.close();
+      return records;
+    } catch (err) {
+      console.error(`[DatabaseManager] 查询三十六计考试记录失败: ${JSON.stringify(err)}`);
+      throw new Error('查询三十六计考试记录失败: ' + JSON.stringify(err));
+    }
+  }
+
+  // ==================== 34省考试记录相关方法 ====================
+
+  /**
+   * 插入34省考试记录
+   */
+  public async insertProvinceExamRecord(record: ProvinceExamRecord): Promise<number> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const valuesBucket: ValuesBucket = {
+        'exam_date': record.examDate,
+        'exam_time': record.examTime,
+        'duration': record.duration
+      };
+
+      const insertId: number = await this.rdbStore.insert('province_exam', valuesBucket);
+      console.info(`[DatabaseManager] 插入34省考试记录成功: examDate=${record.examDate}, duration=${record.duration}, id=${insertId}`);
+      return insertId;
+    } catch (err) {
+      console.error(`[DatabaseManager] 插入34省考试记录失败: ${JSON.stringify(err)}`);
+      throw new Error('插入34省考试记录失败: ' + JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 查询所有34省考试记录（按时间倒序）
+   */
+  public async getAllProvinceExamRecords(): Promise<ProvinceExamRecord[]> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const predicates = new relationalStore.RdbPredicates('province_exam');
+      predicates.orderByDesc('exam_time');
+      
+      const resultSet: relationalStore.ResultSet = await this.rdbStore.query(predicates, [
+        'id',
+        'exam_date',
+        'exam_time',
+        'duration'
+      ]);
+      
+      const records: ProvinceExamRecord[] = [];
+      const idIndex: number = resultSet.getColumnIndex('id');
+      const examDateIndex: number = resultSet.getColumnIndex('exam_date');
+      const examTimeIndex: number = resultSet.getColumnIndex('exam_time');
+      const durationIndex: number = resultSet.getColumnIndex('duration');
+      
+      while (resultSet.goToNextRow()) {
+        const record: ProvinceExamRecord = {
+          id: resultSet.getLong(idIndex),
+          examDate: resultSet.getLong(examDateIndex),
+          examTime: resultSet.getLong(examTimeIndex),
+          duration: resultSet.getLong(durationIndex)
+        };
+        records.push(record);
+      }
+      
+      resultSet.close();
+      return records;
+    } catch (err) {
+      console.error(`[DatabaseManager] 查询34省考试记录失败: ${JSON.stringify(err)}`);
+      throw new Error('查询34省考试记录失败: ' + JSON.stringify(err));
+    }
+  }
+
+  // ==================== 扑克记忆考试记录相关方法 ====================
+
+  /**
+   * 插入扑克记忆考试记录
+   */
+  public async insertPokerExamRecord(record: PokerExamRecord): Promise<number> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const valuesBucket: ValuesBucket = {
+        'exam_date': record.examDate,
+        'exam_time': record.examTime,
+        'duration': record.duration
+      };
+
+      const insertId: number = await this.rdbStore.insert('poker_exam', valuesBucket);
+      console.info(`[DatabaseManager] 插入扑克记忆考试记录成功: examDate=${record.examDate}, duration=${record.duration}, id=${insertId}`);
+      return insertId;
+    } catch (err) {
+      console.error(`[DatabaseManager] 插入扑克记忆考试记录失败: ${JSON.stringify(err)}`);
+      throw new Error('插入扑克记忆考试记录失败: ' + JSON.stringify(err));
+    }
+  }
+
+  /**
+   * 查询所有扑克记忆考试记录（按时间倒序）
+   */
+  public async getAllPokerExamRecords(): Promise<PokerExamRecord[]> {
+    if (!this.rdbStore) {
+      throw new Error('数据库未初始化');
+    }
+
+    try {
+      const predicates = new relationalStore.RdbPredicates('poker_exam');
+      predicates.orderByDesc('exam_time');
+      
+      const resultSet: relationalStore.ResultSet = await this.rdbStore.query(predicates, [
+        'id',
+        'exam_date',
+        'exam_time',
+        'duration'
+      ]);
+      
+      const records: PokerExamRecord[] = [];
+      const idIndex: number = resultSet.getColumnIndex('id');
+      const examDateIndex: number = resultSet.getColumnIndex('exam_date');
+      const examTimeIndex: number = resultSet.getColumnIndex('exam_time');
+      const durationIndex: number = resultSet.getColumnIndex('duration');
+      
+      while (resultSet.goToNextRow()) {
+        const record: PokerExamRecord = {
+          id: resultSet.getLong(idIndex),
+          examDate: resultSet.getLong(examDateIndex),
+          examTime: resultSet.getLong(examTimeIndex),
+          duration: resultSet.getLong(durationIndex)
+        };
+        records.push(record);
+      }
+      
+      resultSet.close();
+      return records;
+    } catch (err) {
+      console.error(`[DatabaseManager] 查询扑克记忆考试记录失败: ${JSON.stringify(err)}`);
+      throw new Error('查询扑克记忆考试记录失败: ' + JSON.stringify(err));
     }
   }
 }

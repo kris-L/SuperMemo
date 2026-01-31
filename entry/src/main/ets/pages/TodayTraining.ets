@@ -1,4 +1,6 @@
 import { router, promptAction } from '@kit.ArkUI';
+import { preferences } from '@kit.ArkData';
+import { Context } from '@kit.AbilityKit';
 import { NumberPegService } from '../utils/NumberPegService';
 import { NumberPeg } from '../model/NumberPeg';
 import { DatabaseManager } from '../database/DatabaseManager';
@@ -32,6 +34,7 @@ struct TodayTrain {
   @State usedPegCount: number = 0; // 已使用过的数据数量（用于UI更新）
   @State completedRounds: number = 0; // 当日已完成轮次
   @State totalRounds: number = 10; // 当日总轮次
+  @State showTrainingRuleDialog: boolean = false; // 是否显示训练说明弹框
   
   private timer: number | null = null;
   private dataType: string = '110数字桩';
@@ -43,12 +46,16 @@ struct TodayTrain {
   private dbManager: DatabaseManager = DatabaseManager.getInstance();
   private startTime: number = 0; // 训练开始时间戳（毫秒）
   private isTimerRunning: boolean = false; // 计时器是否正在运行
+  private autoCloseTimer: number | null = null; // 说明弹框自动关闭定时器
+  private preferencesStore: preferences.Preferences | null = null; // Preferences 存储
 
-  aboutToAppear() {
+  async aboutToAppear() {
     // 仅使用 110 数字桩，matchType 根据轮次自动切换
     const now = new Date();
     this.todayKey = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
-    this.initTodayProgress();
+    await this.initPreferences();
+    await this.checkShouldShowRuleDialog();
+    await this.initTodayProgress();
   }
 
   aboutToDisappear() {
@@ -58,12 +65,99 @@ struct TodayTrain {
       this.timer = null;
       this.isTimerRunning = false;
     }
+    // 清理弹框定时器
+    if (this.autoCloseTimer !== null) {
+      clearTimeout(this.autoCloseTimer);
+      this.autoCloseTimer = null;
+    }
     
     // 保存当前训练时间（已用时间和离开时间戳）
     // 如果训练未完成，保存已用时间和离开时间戳，以便下次继续
     if (!this.isGameOver && this.completedRounds < this.totalRounds) {
       this.saveTrainingTime();
     }
+  }
+
+  /**
+   * 初始化 Preferences
+   */
+  async initPreferences() {
+    try {
+      const context = getContext(this) as Context;
+      this.preferencesStore = await preferences.getPreferences(context, 'TodayTrainingSettings');
+    } catch (e) {
+      console.error('初始化 Preferences 失败', e);
+    }
+  }
+
+  /**
+   * 检查是否显示训练说明弹框
+   */
+  async checkShouldShowRuleDialog() {
+    if (!this.preferencesStore) {
+      await this.initPreferences();
+    }
+    if (!this.preferencesStore) {
+      return;
+    }
+    try {
+      const hideDialog = await this.preferencesStore.get('hideTrainingRuleDialog', false) as boolean;
+      if (!hideDialog) {
+        this.showTrainingRuleDialog = true;
+      }
+    } catch (e) {
+      console.error('读取 Preferences 失败', e);
+      this.showTrainingRuleDialog = true;
+    }
+  }
+
+  /**
+   * 启动自动关闭定时器
+   */
+  startAutoCloseTimer() {
+    if (this.autoCloseTimer !== null) {
+      clearTimeout(this.autoCloseTimer);
+    }
+    const timerId = setTimeout(() => {
+      this.closeTrainingRuleDialog();
+    }, 30 * 1000);
+    this.autoCloseTimer = timerId as number;
+  }
+
+  /**
+   * 关闭训练说明弹框
+   */
+  closeTrainingRuleDialog() {
+    this.showTrainingRuleDialog = false;
+    if (this.autoCloseTimer !== null) {
+      clearTimeout(this.autoCloseTimer);
+      this.autoCloseTimer = null;
+    }
+  }
+
+  /**
+   * 点击“知道了”
+   */
+  onKnowButtonClick() {
+    this.closeTrainingRuleDialog();
+  }
+
+  /**
+   * 点击“不再提示”
+   */
+  async onNeverShowButtonClick() {
+    if (!this.preferencesStore) {
+      await this.initPreferences();
+    }
+    if (this.preferencesStore) {
+      try {
+        await this.preferencesStore.put('hideTrainingRuleDialog', true);
+        await this.preferencesStore.flush();
+      } catch (e) {
+        console.error('保存 Preferences 失败', e);
+      }
+    }
+    this.closeTrainingRuleDialog();
   }
 
   /**
@@ -531,208 +625,300 @@ struct TodayTrain {
   }
 
   build() {
-    Column() {
-      // 顶部栏 + 统计（固定，不滚动）
+    Stack() {
       Column() {
-        Row() {
-          Button() {
-            Image($r('sys.media.ohos_ic_back'))
-              .width(24)
-              .height(24)
-          }
-          .width(44)
-          .height(44)
-          .backgroundColor(Color.Transparent)
-          .onClick(() => {
-            router.back();
-          })
-
-          Text('今日训练')
-            .layoutWeight(1)
-            .textAlign(TextAlign.Center)
-            .fontSize(20)
-            .fontWeight(FontWeight.Medium)
-            .fontColor($r('app.color.text_primary'))
-
-          Blank()
+        // 顶部栏 + 统计（固定，不滚动）
+        Column() {
+          Row() {
+            Button() {
+              Image($r('sys.media.ohos_ic_back'))
+                .width(24)
+                .height(24)
+            }
             .width(44)
             .height(44)
-        }
-        .width('100%')
-        .height(56)
-        .padding({ left: 12, right: 12 })
-        .justifyContent(FlexAlign.Start)
-        .alignItems(VerticalAlign.Center)
-
-        Row() {
-          Column() {
-            Text('时间')
-              .fontSize(12)
-              .fontColor($r('app.color.text_secondary'))
-            Text(this.formatTime(this.elapsedTime))
-              .fontSize(16)
-              .fontWeight(FontWeight.Bold)
-              .fontColor($r('app.color.text_primary'))
-              .margin({ top: 5 })
-          }
-          .flexGrow(1)
-
-          Column() {
-            Text('正确')
-              .fontSize(12)
-              .fontColor($r('app.color.text_secondary'))
-            Text(this.correctCount.toString())
-              .fontSize(16)
-              .fontWeight(FontWeight.Bold)
-              .fontColor('#4CAF50')
-              .margin({ top: 5 })
-          }
-          .flexGrow(1)
-
-          Column() {
-            Text('错误')
-              .fontSize(12)
-              .fontColor($r('app.color.text_secondary'))
-            Text(this.errorCount.toString())
-              .fontSize(16)
-              .fontWeight(FontWeight.Bold)
-              .fontColor('#F44336')
-              .margin({ top: 5 })
-          }
-          .flexGrow(1)
-        }
-        .width('100%')
-        .height(60)
-        .padding({ left: 20, right: 20 })
-        .backgroundColor(Color.White)
-        .justifyContent(FlexAlign.SpaceAround)
-      }
-
-      // 可滚动内容区域
-      Scroll() {
-        Column() {
-          // 游戏区域
-          Grid() {
-            ForEach(this.cards, (card: GameCard) => {
-              GridItem() {
-                this.createCard(card, card.isSelected);
-              }
+            .backgroundColor(Color.Transparent)
+            .onClick(() => {
+              router.back();
             })
-          }
-          .columnsTemplate('1fr 1fr 1fr')
-          .rowsTemplate('1fr 1fr 1fr 1fr')
-          .columnsGap(10)
-          .rowsGap(10)
-          .width('95%')
-          .height(400)
-          .margin({ top: 20 })
 
-          // 今日训练轮次进度提示（10 轮制）
-          if (!this.isGameOver) {
-            Text(`今日训练进度：${this.completedRounds}/${this.totalRounds}`)
-              .fontSize(14)
-              .fontColor($r('app.color.text_secondary'))
-              .margin({ top: 10, bottom: 20 })
+            Text('今日训练')
+              .layoutWeight(1)
+              .textAlign(TextAlign.Center)
+              .fontSize(20)
+              .fontWeight(FontWeight.Medium)
+              .fontColor($r('app.color.text_primary'))
+
+            Blank()
+              .width(44)
+              .height(44)
           }
+          .width('100%')
+          .height(56)
+          .padding({ left: 12, right: 12 })
+          .justifyContent(FlexAlign.Start)
+          .alignItems(VerticalAlign.Center)
+
+          Row() {
+            Column() {
+              Text('时间')
+                .fontSize(12)
+                .fontColor($r('app.color.text_secondary'))
+              Text(this.formatTime(this.elapsedTime))
+                .fontSize(16)
+                .fontWeight(FontWeight.Bold)
+                .fontColor($r('app.color.text_primary'))
+                .margin({ top: 5 })
+            }
+            .flexGrow(1)
+
+            Column() {
+              Text('正确')
+                .fontSize(12)
+                .fontColor($r('app.color.text_secondary'))
+              Text(this.correctCount.toString())
+                .fontSize(16)
+                .fontWeight(FontWeight.Bold)
+                .fontColor('#4CAF50')
+                .margin({ top: 5 })
+            }
+            .flexGrow(1)
+
+            Column() {
+              Text('错误')
+                .fontSize(12)
+                .fontColor($r('app.color.text_secondary'))
+              Text(this.errorCount.toString())
+                .fontSize(16)
+                .fontWeight(FontWeight.Bold)
+                .fontColor('#F44336')
+                .margin({ top: 5 })
+            }
+            .flexGrow(1)
+          }
+          .width('100%')
+          .height(60)
+          .padding({ left: 20, right: 20 })
+          .backgroundColor(Color.White)
+          .justifyContent(FlexAlign.SpaceAround)
+        }
+
+        // 可滚动内容区域
+        Scroll() {
+          Column() {
+            // 游戏区域
+            Grid() {
+              ForEach(this.cards, (card: GameCard) => {
+                GridItem() {
+                  this.createCard(card, card.isSelected);
+                }
+              })
+            }
+            .columnsTemplate('1fr 1fr 1fr')
+            .rowsTemplate('1fr 1fr 1fr 1fr')
+            .columnsGap(10)
+            .rowsGap(10)
+            .width('95%')
+            .height(400)
+            .margin({ top: 20 })
+
+            // 今日训练轮次进度提示（10 轮制）
+            if (!this.isGameOver) {
+              Text(`今日训练进度：${this.completedRounds}/${this.totalRounds}`)
+                .fontSize(14)
+                .fontColor($r('app.color.text_secondary'))
+                .margin({ top: 10, bottom: 20 })
+            }
+            
+            // 底部填充，确保内容从顶部开始
+            Blank()
+              .height(1)
+              .layoutWeight(1)
+          }
+          .width('100%')
+          .alignItems(HorizontalAlign.Center)
+          .justifyContent(FlexAlign.Start)
         }
         .width('100%')
-        .alignItems(HorizontalAlign.Center)
-      }
-      .width('100%')
-      .layoutWeight(1)
-      .scrollBar(BarState.Auto)
-      .edgeEffect(EdgeEffect.Spring)
+        .layoutWeight(1)
+        .scrollBar(BarState.Auto)
+        .edgeEffect(EdgeEffect.Spring)
 
-      // 游戏结束提示（居中显示）
-      if (this.isGameOver) {
-        Column() {
+        // 游戏结束提示（居中显示）
+        if (this.isGameOver) {
           Column() {
-            Text('恭喜完成！')
-              .fontSize(24)
-              .fontWeight(FontWeight.Bold)
-              .margin({ bottom: 20 })
-            
-            Text(this.getGameOverMessage())
-              .fontSize(16)
-              .fontColor($r('app.color.text_secondary'))
-              .margin({ bottom: 20 })
-            
-            Text(`总用时: ${this.formatTime(this.elapsedTime)}`)
-              .fontSize(18)
-              .fontColor($r('app.color.text_primary'))
-              .margin({ bottom: 10 })
-            
-            Text(`正确: ${this.correctCount} 次`)
-              .fontSize(18)
-              .fontColor($r('app.color.text_primary'))
-              .margin({ bottom: 10 })
-            
-            Text(`错误: ${this.errorCount} 次`)
-              .fontSize(18)
-              .fontColor($r('app.color.text_primary'))
-              .margin({ bottom: 30 })
-            
-            // 如果完成了10次，只显示返回按钮；否则显示再来一局和返回按钮
-            if (this.completedRounds >= this.totalRounds) {
-              // 完成今日训练，只显示返回按钮
-              Button('返回')
-                .width('60%')
-                .height(45)
-                .backgroundColor('#9E9E9E')
-                .onClick(() => {
-                  // 直接返回到上一个页面（首页的每日训练页）
-                  router.back();
-                })
-            } else {
-              // 未完成今日训练，显示再来一局和返回按钮
-              Row() {
-                Button('再来一局')
-                  .width('40%')
-                  .height(45)
-                  .backgroundColor('#2196F3')
-                  .onClick(() => {
-                    if (this.dataType === '110数字桩') {
-                      this.usedPegNumbers.clear();
-                    }
-                    this.usedPegCount = 0;
-                    this.elapsedTime = 0;
-                    this.correctCount = 0;
-                    this.errorCount = 0;
-                    this.isGameOver = false;
-                    this.initGame();
-                  })
-                
+            Column() {
+              Text('恭喜完成！')
+                .fontSize(24)
+                .fontWeight(FontWeight.Bold)
+                .margin({ bottom: 20 })
+              
+              Text(this.getGameOverMessage())
+                .fontSize(16)
+                .fontColor($r('app.color.text_secondary'))
+                .margin({ bottom: 20 })
+              
+              Text(`总用时: ${this.formatTime(this.elapsedTime)}`)
+                .fontSize(18)
+                .fontColor($r('app.color.text_primary'))
+                .margin({ bottom: 10 })
+              
+              Text(`正确: ${this.correctCount} 次`)
+                .fontSize(18)
+                .fontColor($r('app.color.text_primary'))
+                .margin({ bottom: 10 })
+              
+              Text(`错误: ${this.errorCount} 次`)
+                .fontSize(18)
+                .fontColor($r('app.color.text_primary'))
+                .margin({ bottom: 30 })
+              
+              // 如果完成了10次，只显示返回按钮；否则显示再来一局和返回按钮
+              if (this.completedRounds >= this.totalRounds) {
+                // 完成今日训练，只显示返回按钮
                 Button('返回')
-                  .width('40%')
+                  .width('60%')
                   .height(45)
                   .backgroundColor('#9E9E9E')
                   .onClick(() => {
                     // 直接返回到上一个页面（首页的每日训练页）
                     router.back();
                   })
+              } else {
+                // 未完成今日训练，显示再来一局和返回按钮
+                Row() {
+                  Button('再来一局')
+                    .width('40%')
+                    .height(45)
+                    .backgroundColor('#2196F3')
+                    .onClick(() => {
+                      if (this.dataType === '110数字桩') {
+                        this.usedPegNumbers.clear();
+                      }
+                      this.usedPegCount = 0;
+                      this.elapsedTime = 0;
+                      this.correctCount = 0;
+                      this.errorCount = 0;
+                      this.isGameOver = false;
+                      this.initGame();
+                    })
+                  
+                  Button('返回')
+                    .width('40%')
+                    .height(45)
+                    .backgroundColor('#9E9E9E')
+                    .onClick(() => {
+                      // 直接返回到上一个页面（首页的每日训练页）
+                      router.back();
+                    })
+                }
+                .width('100%')
+                .justifyContent(FlexAlign.SpaceAround)
               }
-              .width('100%')
-              .justifyContent(FlexAlign.SpaceAround)
             }
+            .width('80%')
+            .padding(20)
+            .backgroundColor(Color.White)
+            .borderRadius(12)
+            .shadow({ radius: 10, color: '#00000020', offsetX: 0, offsetY: 2 })
           }
-          .width('80%')
-          .padding(20)
-          .backgroundColor(Color.White)
-          .borderRadius(12)
-          .shadow({ radius: 10, color: '#00000020', offsetX: 0, offsetY: 2 })
+          .width('100%')
+          .height('100%')
+          .justifyContent(FlexAlign.Center)
+          .position({ x: 0, y: 0 })
+          .backgroundColor('#80000000')
         }
-        .width('100%')
-        .height('100%')
-        .justifyContent(FlexAlign.Center)
-        .position({ x: 0, y: 0 })
-        .backgroundColor('#80000000')
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Center)
+      .padding({ top: 20 })
+
+      if (this.showTrainingRuleDialog) {
+        this.buildTrainingRuleDialog()
       }
     }
     .width('100%')
     .height('100%')
-    .justifyContent(FlexAlign.Center)
-    .padding({ top: 20 })
     .backgroundColor('#F5F5F5')
+  }
+
+  @Builder
+  buildTrainingRuleDialog() {
+    Stack() {
+      Column()
+        .width('100%')
+        .height('100%')
+        .backgroundColor('#80000000')
+        .onClick(() => {
+          this.closeTrainingRuleDialog();
+        })
+        .onAppear(() => {
+          this.startAutoCloseTimer();
+        })
+
+      Column() {
+        Column() {
+          Text('训练说明')
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
+            .fontColor('#FF6B35')
+            .margin({ bottom: 12 })
+
+          Text('1. 完成10个轮次的数字桩匹配才算做一次完整训练。')
+            .fontSize(14)
+            .fontColor('#FF6B35')
+            .alignSelf(ItemAlign.Start)
+            .margin({ bottom: 8 })
+          Text('2. 每轮完成卡片配对计为1轮，进度当天保存。')
+            .fontSize(14)
+            .fontColor('#FF6B35')
+            .alignSelf(ItemAlign.Start)
+            .margin({ bottom: 8 })
+          Text('3. 完成全部轮次后可获得20积分，未完成不计分。')
+            .fontSize(14)
+            .fontColor('#FF6B35')
+            .alignSelf(ItemAlign.Start)
+            .margin({ bottom: 16 })
+
+          Row() {
+            Button('知道了')
+              .width('45%')
+              .height(40)
+              .fontSize(16)
+              .fontWeight(FontWeight.Medium)
+              .backgroundColor('#4CAF50')
+              .fontColor(Color.White)
+              .onClick(() => {
+                this.onKnowButtonClick();
+              })
+            Button('不再提示')
+              .width('45%')
+              .height(40)
+              .fontSize(16)
+              .fontWeight(FontWeight.Medium)
+              .backgroundColor('#FF9800')
+              .fontColor(Color.White)
+              .onClick(() => {
+                this.onNeverShowButtonClick();
+              })
+          }
+          .width('100%')
+          .justifyContent(FlexAlign.SpaceBetween)
+        }
+        .width('90%')
+        .padding({ left: 20, right: 20, top: 20, bottom: 20 })
+        .backgroundColor(Color.White)
+        .borderRadius(12)
+        .shadow({ radius: 20, color: '#80000000', offsetX: 0, offsetY: 4 })
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Start)
+      .padding({ top: 60 })
+    }
+    .width('100%')
+    .height('100%')
   }
 
   @Builder
